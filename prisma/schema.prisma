@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        String   @id @default(cuid())
+  firstname String
+  lastname  String
+  email     String   @unique
+  password  String   
+  role      UserRole @default(CLIENT)
+  
+  timezone  String?  @default("America/New_York")
+  preferences Json?  // UI preferences, notification settings, etc.
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  savedAnalyses SavedAnalysis[]
+  refreshTokens RefreshToken[]
+  
+  @@index([email])
+  @@index([role])
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+  VA_MANAGER
+}
+
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model SavedAnalysis {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title     String   // e.g., "Marketing VA for Apex Coaching"
+  
+  // Original intake data (the questions they answered)
+  intakeData Json    // Store the full intake_json
+  
+  // Current analysis state (always the latest version after refinements)
+  analysis   Json    // The full JD structure (preview + ai_analysis + classification)
+  
+  // Status
+  isFinalized Boolean @default(false)
+  finalizedAt DateTime?
+  
+  // Metadata
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  refinements RefinementMessage[]
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@index([isFinalized])
+}
+
+model RefinementMessage {
+  id              String        @id @default(cuid())
+  analysisId      String
+  analysis        SavedAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  
+  // The conversation
+  role            MessageRole   // 'user' or 'assistant'
+  content         String        @db.Text
+  
+  // What changed (only for assistant messages)
+  changedSections String[]      // e.g., ["roles.0.hours_per_week", "roles.0.kpis.0"]
+  
+  // Snapshot of analysis state AFTER this message
+  // This is key for memory - we can rebuild the exact state at any point
+  analysisSnapshot Json?
+  
+  // Order
+  sequenceNumber  Int           // 1, 2, 3, 4... for ordering
+  
+  createdAt       DateTime      @default(now())
+  
+  @@unique([analysisId, sequenceNumber])
+  @@index([analysisId])
+  @@index([sequenceNumber])
+}
+
+enum MessageRole {
+  user
+  assistant
+}
