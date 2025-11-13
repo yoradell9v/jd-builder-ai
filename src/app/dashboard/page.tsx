@@ -8,13 +8,14 @@ import { UserProvider, User } from "@/context/UserContext";
 async function getDashboardData() {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
-
+    console.log(`Access token: ${accessToken}`);
     if (!accessToken) {
         redirect("/signin");
     }
 
     try {
         const decoded = verifyAccessToken(accessToken);
+        console.log(`Decoded: ${decoded}`)
         if (!decoded) redirect("/signin");
 
         const user = await prisma.user.findUnique({
