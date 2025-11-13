@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { param } from "framer-motion/client";
 
 export async function GET(req: NextRequest) {
   try {
@@ -104,12 +103,11 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { analysisId: string } }
+  { params }: { params: Promise<{ analysisId: string }> }
 ) {
   try {
-    const url = new URL(req.url);
-    const pathParts = url.pathname.split("/");
-    const analysisId = pathParts[pathParts.length - 1];
+    // CHANGE: Use await params instead of parsing URL
+    const { analysisId } = await params;
 
     if (!analysisId) {
       return NextResponse.json(
@@ -128,6 +126,7 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
     await prisma.savedAnalysis.delete({
       where: { id: analysisId },
     });
