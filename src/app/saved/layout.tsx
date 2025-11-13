@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifyAccessToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { UserProvider, User } from "@/context/UserContext";
+export const dynamic = "force-dynamic";
 
 export default async function SavedLayout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies();

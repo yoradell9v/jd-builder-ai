@@ -4,6 +4,7 @@ import { verifyAccessToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import DashboardClient from "./DashboardClient";
 import { UserProvider, User } from "@/context/UserContext";
+export const dynamic = "force-dynamic";
 
 async function getDashboardData() {
     const cookieStore = await cookies();
