@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "set NODE_OPTIONS=--max-old-space-size=4096 && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate",
+    "deploy": "prisma migrate deploy"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
