@@ -100,10 +100,11 @@ export default function Modal({
                 <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-800 sm:border-t-0 sm:pt-0">
                   <button
                     onClick={onClose}
-                    className="px-4 py-2.5 sm:py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-200 rounded-lg sm:rounded-none sm:bg-transparent bg-zinc-100 dark:bg-zinc-800 sm:bg-transparent"
+                    className="px-4 py-2.5 sm:py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors duration-200 rounded-lg bg-zinc-100 dark:bg-zinc-800"
                   >
                     {cancelText}
                   </button>
+
                   <button
                     onClick={onConfirm}
                     className={`px-4 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-all duration-200 ${confirmButtonClasses}`}

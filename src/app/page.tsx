@@ -30,15 +30,15 @@ export default function Home() {
   ];
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-white font-sans">
-      <main className="flex min-h-screen w-full max-w-5xl flex-col items-center justify-between py-32 px-8 bg-white sm:items-start">
+    <div className="flex min-h-screen items-center justify-center font-sans transition-colors duration-150" style={{ backgroundColor: "var(--background)" }}>
+      <main className="flex min-h-screen w-full max-w-5xl flex-col items-center justify-between py-24 px-8 sm:items-start transition-colors duration-150" style={{ backgroundColor: "var(--background)" }}>
         {/* Header */}
         <div className="w-full">
           <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left mb-12">
-            <h1 className="text-3xl font-semibold leading-10 tracking-tight text-[var(--primary)] sm:text-5xl">
+            <h1 className="text-3xl font-semibold leading-10 tracking-tight text-[var(--primary)] sm:text-5xl transition-colors duration-150 dark:text-white">
               Let AI Analyze Your Goals
             </h1>
-            <p className="max-w-md text-lg leading-8 text-zinc-600">
+            <p className="max-w-md text-lg leading-8 transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>
               We identify your main business outcome and pinpoint the most impactful role to achieve it.
             </p>
           </div>
@@ -48,17 +48,21 @@ export default function Home() {
             {cards.map((card, index) => (
               <div
                 key={index}
-                className="group relative rounded-2xl border border-zinc-200 bg-zinc-50 backdrop-blur p-6 shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5"
+                className="group relative rounded-2xl backdrop-blur p-6 shadow-lg transition-all duration-150 hover:shadow-xl hover:-translate-y-0.5"
+                style={{
+                  borderColor: "var(--card-border)",
+                  backgroundColor: "var(--card-bg)"
+                }}
               >
                 <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
                   <div
-                    className="w-14 h-14 mb-4 rounded-lg flex items-center justify-center shadow-md"
+                    className="w-14 h-14 mb-4 rounded-lg flex items-center justify-center shadow-md transition-colors duration-150"
                     style={{ backgroundColor: "var(--accent)" }}
                   >
                     {card.icon}
                   </div>
-                  <h3 className="text-base font-semibold text-black mb-2">{card.title}</h3>
-                  <p className="text-sm text-zinc-600 leading-relaxed">{card.subtitle}</p>
+                  <h3 className="text-base font-semibold mb-2 transition-colors duration-150" style={{ color: "var(--text-primary)" }}>{card.title}</h3>
+                  <p className="text-sm leading-relaxed transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>{card.subtitle}</p>
                 </div>
               </div>
             ))}
@@ -69,7 +73,7 @@ export default function Home() {
         <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
           <Link
             href="/signin"
-            className="w-full sm:w-auto font-semibold py-2.5 px-6 rounded-xl focus:outline-none focus:ring-2 transition shadow-md"
+            className="w-full sm:w-auto font-semibold py-2.5 px-6 rounded-xl focus:outline-none focus:ring-2 transition-all duration-150 shadow-md"
             style={{
               backgroundColor: "var(--accent)",
               color: "white",
@@ -80,7 +84,7 @@ export default function Home() {
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl border transition-all"
+            className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl border transition-all duration-150"
             style={{
               borderColor: "var(--accent)",
               color: "var(--accent)",

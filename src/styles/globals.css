@@ -7,21 +7,54 @@
   --primary: #18416B;
   --accent: #fac133;
   --accent-bg: #fff9e990;
-
-}
-
-/* @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-poppins);
+  --card-bg: #ffffff;
+  --card-border: #e4e4e7;
+  --text-primary: #171717;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --border-color: #e4e4e7;
+  --hover-bg: #f4f4f5;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.light) {
+    --background: #09090b;
+    --foreground: #fafafa;
+    --card-bg: #18181b;
+    --card-border: #27272a;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --border-color: #27272a;
+    --hover-bg: #27272a;
   }
-} */
+}
+
+html.dark,
+html.dark :root {
+  --background: #09090b;
+  --foreground: #fafafa;
+  --card-bg: #18181b;
+  --card-border: #27272a;
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --border-color: #27272a;
+  --hover-bg: #27272a;
+}
+
+html.light,
+html.light :root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --card-bg: #ffffff;
+  --card-border: #e4e4e7;
+  --text-primary: #171717;
+  --text-secondary: #52525b;
+  --text-muted: #71717a;
+  --border-color: #e4e4e7;
+  --hover-bg: #f4f4f5;
+}
 
 body {
   background: var(--background);
@@ -34,8 +67,20 @@ input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus,
 input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.1) inset !important;
-  transition: background-color 9999s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0px 1000px var(--card-bg) inset !important;
+  -webkit-text-fill-color: var(--text-primary) !important;
+  transition: background-color 9999s ease-in-out 0s, color 150ms;
+}
+
+@media (prefers-color-scheme: dark) {
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0px 1000px var(--card-bg) inset !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+  }
 }
 
 .loader {
@@ -105,8 +150,19 @@ input:-webkit-autofill:active {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #5e5e5e;
+  background: var(--text-muted);
   border-radius: 8px;
+  transition: background-color 150ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-thumb {
+    background: var(--text-muted);
+  }
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
 }
 
 ::-webkit-scrollbar-track {

@@ -435,6 +435,7 @@ export default function DashboardClient({ user }: { user: User }) {
         }
 
         try {
+            console.log("Role: ", analysisResult.ai_analysis?.roles?.[0]?.title);
             const title =
                 `${analysisResult.ai_analysis?.roles?.[0]?.title || 'Job Analysis'}` +
                 (intakeData.companyName ? ` - ${intakeData.companyName}` : '');
@@ -725,7 +726,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                     transition={{ duration: 0.4, ease: "easeOut" }}
                                     className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm"
                                 >
-                                    <h3 className="text-lg font-semibold text-[var(--primary)] dark:[var(--primary)]-zinc-100 mb-3">
+                                    <h3 className="text-lg font-semibold text-[var(--primary)] dark:text-white mb-3">
                                         What You Told Us
                                     </h3>
                                     <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
@@ -976,7 +977,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                                 <ul className="space-y-2">
                                                     {primaryRole.core_outcomes.map((outcome, index) => (
                                                         <li key={index} className="flex items-start gap-3">
-                                                            <span className="text-[var(--primary)] mt-1 flex-shrink-1">•</span>
+                                                            <span className="text-[var(--primary)] mt-1 flex-shrink-1 dark:text-zinc-600">•</span>
                                                             <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
                                                                 {outcome}
                                                             </span>
@@ -995,7 +996,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                                 <ul className="space-y-3">
                                                     {primaryRole.responsibilities.map((resp, index) => (
                                                         <li key={index} className="flex items-start gap-3">
-                                                            <span className="text-[var(--accent)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                                                            <span className="text-[var(--accent)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)] dark:bg-zinc-600"></span>
                                                             <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 leading-relaxed">
                                                                 {resp}
                                                             </span>
@@ -1034,7 +1035,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                                     {primaryRole.tools.map((tool, index) => (
                                                         <span
                                                             key={index}
-                                                            className="px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-xs font-medium border border-[var(--primary)]/20"
+                                                            className="px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-xs font-medium border border-[var(--primary)]/20 dark:border-[var(--accent)]/30 dark:text-[var(--accent)] dark:bg-[var(--accent)]/10"
                                                         >
                                                             {tool}
                                                         </span>
@@ -1052,7 +1053,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                                 <ul className="space-y-2">
                                                     {primaryRole.kpis.map((kpi, index) => (
                                                         <li key={index} className="flex items-start gap-2">
-                                                            <span className="text-[var(--primary)] mt-1">•</span>
+                                                            <span className="text-[var(--primary)] dark:text-zinc-600 mt-1">•</span>
                                                             <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
                                                                 {kpi}
                                                             </span>
@@ -1130,8 +1131,8 @@ export default function DashboardClient({ user }: { user: User }) {
 
                                         {/* Service Recommendation */}
                                         {analysisResult.ai_analysis.service_recommendation && (
-                                            <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
-                                                <p className="text-xs font-medium text-[var(--primary)] mb-2 uppercase tracking-wide">
+                                            <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
+                                                <p className="text-xs font-medium text-[var(--primary)] mb-2 uppercase tracking-wide dark:text-[var(--accent)]">
                                                     Service Recommendation
                                                 </p>
                                                 <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -1148,7 +1149,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                                         <ul className="space-y-1">
                                                             {analysisResult.ai_analysis.service_recommendation.next_steps.map((step, index) => (
                                                                 <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                                    <span className="text-[var(--primary)] mt-1">→</span>
+                                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">→</span>
                                                                     <span>{step}</span>
                                                                 </li>
                                                             ))}
@@ -1203,14 +1204,14 @@ export default function DashboardClient({ user }: { user: User }) {
                                         {(analysisResult.ai_analysis.risks?.length > 0 || analysisResult.ai_analysis.assumptions?.length > 0) && (
                                             <div className="space-y-4">
                                                 {analysisResult.ai_analysis.risks?.length > 0 && (
-                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
+                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
                                                         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
                                                             Risks & Considerations
                                                         </p>
                                                         <ul className="space-y-2">
                                                             {analysisResult.ai_analysis.risks.map((risk, index) => (
                                                                 <li key={index} className="flex items-start gap-2">
-                                                                    <span className="text-black dark:text-black mt-1">•</span>
+                                                                    <span className="text-black dark:text-zinc-300 mt-1">•</span>
                                                                     <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                                                                         {risk}
                                                                     </span>
@@ -1220,14 +1221,14 @@ export default function DashboardClient({ user }: { user: User }) {
                                                     </div>
                                                 )}
                                                 {analysisResult.ai_analysis.assumptions?.length > 0 && (
-                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
+                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
                                                         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
                                                             Assumptions
                                                         </p>
                                                         <ul className="space-y-2">
                                                             {analysisResult.ai_analysis.assumptions.map((assumption, index) => (
                                                                 <li key={index} className="flex items-start gap-2">
-                                                                    <span className="text-blue-600 dark:text-blue-400 mt-1">•</span>
+                                                                    <span className="text-[var(--primary)] dark:text-zinc-300 mt-1">•</span>
                                                                     <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
                                                                         {assumption}
                                                                     </span>

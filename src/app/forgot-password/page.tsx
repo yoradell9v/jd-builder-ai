@@ -38,12 +38,22 @@ export default function ForgotPasswordPage() {
 
     if (isSuccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center px-4 bg-white text-black">
-                <div className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border border-black/10 bg-white/90 shadow-lg">
+            <div
+                className="min-h-screen flex items-center justify-center px-4 transition-colors duration-150"
+                style={{ backgroundColor: "var(--background)", color: "var(--text-primary)" }}
+            >
+                <div
+                    className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border shadow-lg transition-colors duration-150"
+                    style={{ borderColor: "var(--border-color)", backgroundColor: "var(--card-bg)" }}
+                >
                     <div className="text-center">
-                        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                        <div
+                            className="mx-auto flex items-center justify-center h-12 w-12 rounded-full mb-4"
+                            style={{ backgroundColor: "rgba(34,197,94,0.15)" }}
+                        >
                             <svg
-                                className="h-6 w-6 text-green-600"
+                                className="h-6 w-6"
+                                style={{ color: "rgb(34,197,94)" }}
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
@@ -56,22 +66,39 @@ export default function ForgotPasswordPage() {
                                 />
                             </svg>
                         </div>
-                        <h2 className="text-2xl font-semibold text-black mb-2">Check your email</h2>
-                        <p className="text-sm text-black/60 mb-6">
+                        <h2
+                            className="text-2xl font-semibold mb-2 transition-colors duration-150"
+                            style={{ color: "var(--text-primary)" }}
+                        >
+                            Check your email
+                        </h2>
+                        <p
+                            className="text-sm mb-6 transition-colors duration-150"
+                            style={{ color: "var(--text-secondary)" }}
+                        >
                             We've sent a password reset link to <strong>{email}</strong>
                         </p>
-                        <p className="text-xs text-black/50 mb-6">
+                        <p
+                            className="text-xs mb-6 transition-colors duration-150"
+                            style={{ color: "var(--text-muted)" }}
+                        >
                             Didn't receive the email? Check your spam folder or{' '}
                             <button
                                 onClick={() => setIsSuccess(false)}
-                                className="text-[var(--accent)] hover:brightness-110 transition"
+                                className="font-medium transition-all duration-150"
+                                style={{ color: "var(--accent)" }}
+                                onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+                                onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
                             >
                                 try again
                             </button>
                         </p>
                         <Link
                             href="/signin"
-                            className="inline-block text-sm text-[var(--accent)] hover:brightness-110 transition font-medium"
+                            className="inline-block text-sm font-medium transition-all duration-150"
+                            style={{ color: "var(--accent)" }}
+                            onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.1)")}
+                            onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
                         >
                             ← Back to sign in
                         </Link>
@@ -82,25 +109,46 @@ export default function ForgotPasswordPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 bg-white text-black">
+        <div
+            className="min-h-screen flex items-center justify-center px-4 transition-colors duration-150"
+            style={{ backgroundColor: "var(--background)", color: "var(--text-primary)" }}
+        >
             <form
                 onSubmit={handleSubmit}
-                className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border border-black/10 bg-white/90 shadow-lg"
+                className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border shadow-lg transition-all duration-150"
+                style={{ borderColor: "var(--border-color)", backgroundColor: "var(--card-bg)" }}
             >
                 <div className="mb-8">
-                    <h2 className="text-2xl font-semibold text-black mb-2">Forgot password?</h2>
-                    <p className="text-sm text-black/60">
+                    <h2
+                        className="text-2xl font-semibold mb-2 transition-colors duration-150"
+                        style={{ color: "var(--text-primary)" }}
+                    >
+                        Forgot password?
+                    </h2>
+                    <p
+                        className="text-sm transition-colors duration-150"
+                        style={{ color: "var(--text-secondary)" }}
+                    >
                         No worries, we'll send you reset instructions.
                     </p>
                     {errorMessage && (
-                        <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-md">
-                            <p className="text-sm text-red-600">{errorMessage}</p>
+                        <div
+                            className="mt-4 p-3 border rounded-md transition-colors duration-150"
+                            style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", borderColor: "rgba(239, 68, 68, 0.3)" }}
+                        >
+                            <p className="text-sm" style={{ color: "rgb(220, 38, 38)" }}>
+                                {errorMessage}
+                            </p>
                         </div>
                     )}
                 </div>
 
                 <div className="mb-6">
-                    <label htmlFor="email" className="block text-sm font-medium text-black/70 mb-1">
+                    <label
+                        htmlFor="email"
+                        className="block text-sm font-medium mb-1 transition-colors duration-150"
+                        style={{ color: "var(--text-secondary)" }}
+                    >
                         Email
                     </label>
                     <input
@@ -112,7 +160,12 @@ export default function ForgotPasswordPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
                         required
-                        className="w-full px-3 py-2 border text-black border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                        style={{
+                            borderColor: "var(--border-color)",
+                            backgroundColor: "var(--background)",
+                            color: "var(--text-primary)"
+                        }}
                     />
                 </div>
 
@@ -151,7 +204,14 @@ export default function ForgotPasswordPage() {
                 <div className="flex justify-center">
                     <Link
                         href="/signin"
-                        className=" w-full flex items-center justify-center gap-1 text-sm font-medium text-[var(--accent)] border border-[var(--accent)] rounded-xl py-2.5 px-4 "
+                        className="w-full flex items-center justify-center gap-1 text-sm font-medium rounded-xl py-2.5 px-4 transition-all duration-150"
+                        style={{
+                            color: "var(--accent)",
+                            borderColor: "var(--accent)",
+                            borderWidth: "1px"
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.filter = "brightness(1.08)")}
+                        onMouseLeave={(e) => (e.currentTarget.style.filter = "brightness(1)")}
                     >
                         <ChevronLeft className="w-4 h-4" />
                         Back to sign in

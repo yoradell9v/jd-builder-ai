@@ -37,6 +37,14 @@ interface IntakeFormProps {
 }
 
 const STORAGE_KEY = 'jd-form-data';
+const MAX_SOP_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_SOP_EXTENSIONS = [".pdf", ".doc", ".docx", ".txt"];
+const ALLOWED_SOP_MIME_TYPES = new Set([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "text/plain",
+]);
 
 export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }: IntakeFormProps) {
     const [formData, setFormData] = useState<IntakeFormData>({
@@ -71,6 +79,9 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
 
     const [showClearModal, setShowClearModal] = useState(false);
     const [isFormClearing, setIsFormClearing] = useState(false);
+    const [sopFile, setSopFile] = useState<File | null>(null);
+    const [sopFileError, setSopFileError] = useState<string | null>(null);
+    const sopFileInputRef = useRef<HTMLInputElement | null>(null);
 
     const steps = [
         { id: 0, title: "Company Info", required: ["companyName"] },
@@ -149,6 +160,13 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
             onFormChange?.(newData);
             return newData;
         });
+        if (field === "existingSOPs" && value === "No") {
+            setSopFile(null);
+            setSopFileError(null);
+            if (sopFileInputRef.current) {
+                sopFileInputRef.current.value = "";
+            }
+        }
     };
 
     const handleTaskChange = (index: number, value: string) => {
@@ -161,6 +179,39 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         const updatedRequirements = [...formData.requirements];
         updatedRequirements[index] = value;
         handleInputChange("requirements", updatedRequirements);
+    };
+
+    const handleSOPFileChange = (file: File | null) => {
+        if (!file) {
+            setSopFile(null);
+            setSopFileError(null);
+            return;
+        }
+
+        const extension = file.name ? file.name.substring(file.name.lastIndexOf(".")).toLowerCase() : "";
+        const isExtensionAllowed = ALLOWED_SOP_EXTENSIONS.includes(extension);
+        const isMimeAllowed = file.type ? ALLOWED_SOP_MIME_TYPES.has(file.type) : isExtensionAllowed;
+
+        if (file.size > MAX_SOP_FILE_SIZE) {
+            setSopFile(null);
+            setSopFileError("File is too large. Please upload a file under 10MB.");
+            if (sopFileInputRef.current) {
+                sopFileInputRef.current.value = "";
+            }
+            return;
+        }
+
+        if (!isExtensionAllowed && !isMimeAllowed) {
+            setSopFile(null);
+            setSopFileError("Unsupported file type. Allowed types: PDF, DOC, DOCX, TXT.");
+            if (sopFileInputRef.current) {
+                sopFileInputRef.current.value = "";
+            }
+            return;
+        }
+
+        setSopFile(file);
+        setSopFileError(null);
     };
 
     const handleClearForm = () => {
@@ -200,36 +251,81 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
             setIsFormClearing(false);
             setShowClearModal(false);
         }
+        setSopFile(null);
+        setSopFileError(null);
+        if (sopFileInputRef.current) {
+            sopFileInputRef.current.value = "";
+        }
     };
 
 
     const handleSubmitAnalysis = async () => {
+        if (sopFileError) {
+            setAnalysisError("Please resolve the SOP file issue before generating the job description.");
+            return;
+        }
+
         setIsAnalyzing(true);
         setAnalysisError(null);
         setAnalysisSuccess(false);
 
         try {
+            const toolsArray = formData.tools
+                .split(",")
+                .map(tool => tool.trim())
+                .filter(Boolean);
+
+            const intakePayload = {
+                brand: {
+                    name: formData.companyName,
+                },
+                website: formData.website,
+                business_goal: formData.businessGoal,
+                outcome_90d: formData.outcome90Day,
+                tasks_top5: formData.tasks.filter(task => task.trim()).slice(0, 5),
+                requirements: formData.requirements.filter(req => req.trim()),
+                weekly_hours: parseInt(formData.weeklyHours, 10) || 0,
+                daily_overlap_hours: Number(formData.dailyOverlap) || 0,
+                timezone: formData.timezone,
+                client_facing: formData.clientFacing === "Yes",
+                tools: toolsArray,
+                tools_raw: formData.tools,
+                english_level: formData.englishLevel,
+                budget_band: formData.budgetBand,
+                management_style: formData.managementStyle,
+                reporting_expectations: formData.reportingExpectations,
+                security_needs: formData.securityNeeds,
+                deal_breakers: formData.dealBreakers,
+                role_split: formData.roleSplit,
+                nice_to_have_skills: formData.niceToHaveSkills,
+                existing_sops: formData.existingSOPs === "Yes",
+                examples_url: formData.examplesURL,
+                sop_filename: sopFile?.name ?? null,
+            };
+
+            const payload = new FormData();
+            payload.append("intake_json", JSON.stringify(intakePayload));
+
+            if (sopFile) {
+                payload.append("sopFile", sopFile);
+            }
+
             const response = await fetch('/api/jd/analyze', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    intake_json: {
-                        brand: {
-                            name: formData.companyName,
-                        },
-                        tasks_top5: formData.tasks.filter(Boolean),
-                        tools: formData.tools,
-                        outcome_90d: formData.outcome90Day,
-                        weekly_hours: parseInt(formData.weeklyHours),
-                        client_facing: formData.clientFacing === 'Yes',
-                    }
-                })
+                body: payload,
             });
 
             if (!response.ok) {
-                throw new Error('Analysis failed');
+                let message = 'Analysis failed';
+                try {
+                    const errorPayload = await response.json();
+                    if (errorPayload?.error) {
+                        message = errorPayload.error;
+                    }
+                } catch {
+                    // Ignore JSON parse errors and use default message
+                }
+                throw new Error(message);
             }
 
             const data = await response.json();
@@ -690,9 +786,9 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
 
                             {/* Step 6: Additional Details - Process */}
                             {currentStep === 6 && (
-                                <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800">
-                                    <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-1">Additional Details - Process</h3>
-                                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Optional information to refine your job description</p>
+                                <div className="bg-white dark:bg-zinc-900 rounded-xl p-6 shadow-md border border-neutral-200 dark:border-zinc-700">
+                                    <h3 className="text-base font-semibold text-neutral-900 mb-1">Additional Details - Process</h3>
+                                    <p className="text-sm text-neutral-500 mb-4">Optional information to refine your job description</p>
                                     <div className={sectionClasses}>
                                         <div>
                                             <label className={labelClasses}>Existing SOPs?</label>
@@ -706,6 +802,48 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                                 placeholder="Select option"
                                             />
                                         </div>
+
+                                        {formData.existingSOPs === "Yes" && (
+                                            <div>
+                                                <label className={labelClasses}>Drop or upload a file of your existing SOP</label>
+                                                <input
+                                                    ref={sopFileInputRef}
+                                                    type="file"
+                                                    accept=".pdf,.doc,.docx,.txt"
+                                                    onChange={(e) => handleSOPFileChange(e.target.files?.[0] ?? null)}
+                                                    className={inputClasses}
+                                                />
+                                                {sopFile && (
+                                                    <div className="mt-2 flex items-center justify-between rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2 text-sm text-zinc-700 dark:text-zinc-200">
+                                                        <span className="truncate">
+                                                            {sopFile.name} · {(sopFile.size / (1024 * 1024)).toFixed(2)} MB
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSopFile(null);
+                                                                setSopFileError(null);
+                                                                if (sopFileInputRef.current) {
+                                                                    sopFileInputRef.current.value = "";
+                                                                }
+                                                            }}
+                                                            className="ml-4 text-xs font-medium text-[var(--accent)] hover:underline"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {sopFileError && (
+                                                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{sopFileError}</p>
+                                                )}
+                                                {formData.existingSOPs === "Yes" && !sopFile && !sopFileError && (
+                                                    <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                                                        Supported file types: PDF, DOC, DOCX, TXT. Max size 10MB.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
                                         <div>
                                             <label className={labelClasses}>Examples to Emulate</label>
                                             <input
@@ -793,7 +931,10 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             />
                                         </div>
                                     </div>
+
+
                                 </div>
+
                             )}
 
                         </div>

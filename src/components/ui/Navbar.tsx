@@ -7,6 +7,7 @@ import { FaUser, FaSignOutAlt } from "react-icons/fa";
 import { ChevronUpDownIcon } from "@heroicons/react/20/solid";
 import { useUser } from "@/context/UserContext";
 import Modal from "./Modal";
+import AccountDetailsModal from "./AccountDetailsModal";
 
 const accountOptions = [
     { name: "Account Details", href: "/account/details" },
@@ -22,6 +23,7 @@ export default function Navbar() {
     const [selected, setSelected] = useState(accountOptions[0]);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isAccountDetailsModalOpen, setIsAccountDetailsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -56,7 +58,7 @@ export default function Navbar() {
 
     return (
         <>
-            <nav className="fixed top-4 right-6 z-[9999] flex items-center gap-6 px-6 py-3 rounded-2xl border border-neutral-200/30 bg-white shadow-md text-neutral-700">
+            <nav className="fixed top-4 right-6 z-[9999] flex items-center gap-6 px-6 py-3 rounded-2xl border shadow-md transition-all duration-150" style={{ borderColor: "var(--card-border)", backgroundColor: "var(--card-bg)", color: "var(--text-secondary)" }}>
 
                 {/* Account Dropdown */}
                 <Listbox value={selected} onChange={setSelected}>
@@ -81,7 +83,7 @@ export default function Navbar() {
                                 leaveFrom="opacity-100 scale-100"
                                 leaveTo="opacity-0 scale-95"
                             >
-                                <Listbox.Options className="absolute right-0 mt-2 w-44 rounded-xl bg-white border border-neutral-200 shadow-lg overflow-hidden focus:outline-none z-50">
+                                <Listbox.Options className="absolute right-0 mt-2 w-44 rounded-xl border shadow-lg overflow-hidden focus:outline-none z-50 transition-all duration-150" style={{ backgroundColor: "var(--card-bg)", borderColor: "var(--card-border)" }}>
                                     {accountOptions.map((option) => (
                                         <Listbox.Option
                                             key={option.name}
@@ -89,15 +91,29 @@ export default function Navbar() {
                                             as={Fragment}
                                         >
                                             {({ active }) => (
-                                                <Link
-                                                    href={option.href}
-                                                    className={`block px-4 py-2 text-sm ${active
-                                                        ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                                                        : "text-neutral-700"
-                                                        }`}
-                                                >
-                                                    {option.name}
-                                                </Link>
+                                                option.name === "Account Details" ? (
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsAccountDetailsModalOpen(true);
+                                                        }}
+                                                        className={`w-full text-left block px-4 py-2 text-sm transition-colors duration-150 ${active ? "bg-[var(--accent)]/10" : ""}`}
+                                                        style={{
+                                                            color: active ? "var(--accent)" : "var(--text-secondary)"
+                                                        }}
+                                                    >
+                                                        {option.name}
+                                                    </button>
+                                                ) : (
+                                                    <Link
+                                                        href={option.href}
+                                                        className={`block px-4 py-2 text-sm transition-colors duration-150 ${active ? "bg-[var(--accent)]/10" : ""}`}
+                                                        style={{
+                                                            color: active ? "var(--accent)" : "var(--text-secondary)"
+                                                        }}
+                                                    >
+                                                        {option.name}
+                                                    </Link>
+                                                )
                                             )}
                                         </Listbox.Option>
                                     ))}
@@ -108,8 +124,11 @@ export default function Navbar() {
                 </Listbox>
 
                 <button
-                    className="flex items-center gap-2 text-sm font-medium hover:text-[var(--accent)] transition-colors group"
+                    className="flex items-center gap-2 text-sm font-medium transition-colors duration-150 group"
+                    style={{ color: "var(--text-secondary)" }}
                     onClick={() => setIsModalOpen(true)}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-secondary)"}
                 >
                     <FaSignOutAlt className="text-lg text-neutral-500 group-hover:text-[var(--accent)] transition-all duration-200 group-hover:drop-shadow-[0_0_6px_var(--accent)]" />
                 </button>
@@ -147,6 +166,13 @@ export default function Navbar() {
                         "Sign Out"
                     )
                 }
+            />
+
+            <AccountDetailsModal
+                isOpen={isAccountDetailsModalOpen}
+                onClose={() => setIsAccountDetailsModalOpen(false)}
+                user={user}
+                onLogout={handleConfirmLogout}
             />
 
         </>

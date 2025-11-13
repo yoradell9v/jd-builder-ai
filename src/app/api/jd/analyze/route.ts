@@ -1,5 +1,230 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import path from "path";
+
+export const runtime = "nodejs";
+
+const MAX_SOP_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_SOP_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".txt"]);
+const ALLOWED_SOP_MIME_TYPES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
+const SOP_RELEVANCE_KEYWORDS = [
+  "process",
+  "procedure",
+  "workflow",
+  "step",
+  "responsible",
+  "responsibility",
+  "task",
+  "guideline",
+  "standard operating",
+  "checklist",
+  "handoff",
+  "frequency",
+  "owner",
+  "outcome",
+];
+const SOP_SUMMARY_CHAR_LIMIT = 20000;
+const SOP_EXCERPT_CHAR_LIMIT = 3000;
+
+function getFileExtension(fileName?: string | null) {
+  if (!fileName) return "";
+  return path.extname(fileName).toLowerCase();
+}
+
+function validateSopFile(file: File) {
+  if (file.size > MAX_SOP_FILE_SIZE) {
+    return {
+      valid: false,
+      error: "The SOP file is too large. Please upload a document under 10MB.",
+    };
+  }
+
+  const extension = getFileExtension(file.name);
+  const extensionAllowed = extension
+    ? ALLOWED_SOP_EXTENSIONS.has(extension)
+    : false;
+  const mimeAllowed = file.type ? ALLOWED_SOP_MIME_TYPES.has(file.type) : false;
+
+  if (!extensionAllowed && !mimeAllowed) {
+    return {
+      valid: false,
+      error: "Unsupported SOP file type. Allowed types: PDF, DOC, DOCX, TXT.",
+    };
+  }
+
+  return { valid: true };
+}
+
+function normalizeWhitespace(text: string) {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+async function extractTextFromSop(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const extension = getFileExtension(file.name);
+  const mimeType = file.type;
+
+  try {
+    if (extension === ".pdf" || mimeType === "application/pdf") {
+      try {
+        // Import pdf-parse correctly
+        const pdfParse = (await import("pdf-parse")).default;
+        const result = await pdfParse(buffer);
+
+        if (!result || !result.text) {
+          throw new Error("PDF parsing returned no text content");
+        }
+
+        return normalizeWhitespace(result.text);
+      } catch (pdfError) {
+        console.error("PDF parsing error details:", pdfError);
+        throw new Error(
+          `Failed to parse PDF: ${
+            pdfError instanceof Error ? pdfError.message : "Unknown error"
+          }`
+        );
+      }
+    }
+
+    if (
+      extension === ".docx" ||
+      mimeType ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      try {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer });
+
+        if (!result || !result.value) {
+          throw new Error("DOCX parsing returned no text content");
+        }
+
+        return normalizeWhitespace(result.value);
+      } catch (docxError) {
+        console.error("DOCX parsing error details:", docxError);
+        throw new Error(
+          `Failed to parse DOCX: ${
+            docxError instanceof Error ? docxError.message : "Unknown error"
+          }`
+        );
+      }
+    }
+
+    if (extension === ".doc" || mimeType === "application/msword") {
+      try {
+        const WordExtractor = (await import("word-extractor")).default;
+        const extractor = new WordExtractor();
+        const doc = await extractor.extract(buffer);
+        const text =
+          typeof doc?.getBody === "function"
+            ? doc.getBody()
+            : String(doc ?? "");
+
+        if (!text) {
+          throw new Error("DOC parsing returned no text content");
+        }
+
+        return normalizeWhitespace(text);
+      } catch (docError) {
+        console.error("DOC parsing error details:", docError);
+        throw new Error(
+          `Failed to parse DOC: ${
+            docError instanceof Error ? docError.message : "Unknown error"
+          }`
+        );
+      }
+    }
+
+    // Default to UTF-8 text for .txt files
+    if (extension === ".txt" || mimeType === "text/plain") {
+      const text = buffer.toString("utf-8");
+
+      if (!text || text.trim().length === 0) {
+        throw new Error("Text file is empty");
+      }
+
+      return normalizeWhitespace(text);
+    }
+
+    throw new Error(`Unsupported file type: ${extension || mimeType}`);
+  } catch (error) {
+    console.error("SOP extraction error:", error);
+
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes("Failed to parse")) {
+        throw error; // Re-throw our custom errors
+      }
+      throw new Error(
+        `Failed to parse the SOP file (${extension || mimeType}): ${
+          error.message
+        }`
+      );
+    }
+
+    throw new Error(
+      "Failed to parse the SOP file. Please ensure it's a valid PDF, DOC, DOCX, or TXT document."
+    );
+  }
+}
+
+function isSopRelevant(text: string) {
+  if (!text || text.length < 200) {
+    return false;
+  }
+
+  const lower = text.toLowerCase();
+  const keywordHits = SOP_RELEVANCE_KEYWORDS.filter((keyword) =>
+    lower.includes(keyword)
+  ).length;
+
+  const wordCount = text.split(/\s+/).length;
+
+  return keywordHits >= 3 && wordCount >= 50;
+}
+
+function truncateForPrompt(text: string, limit: number) {
+  if (text.length <= limit) {
+    return text;
+  }
+  return `${text.slice(0, limit)}...`;
+}
+
+function normalizeStringArray(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0);
+  }
+
+  if (typeof input === "string" && input.trim().length > 0) {
+    return input
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
+  return [];
+}
+
+function normalizeTasks(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0)
+      .slice(0, 5);
+  }
+  if (typeof input === "string" && input.trim()) {
+    return [input.trim()];
+  }
+  return [];
+}
 
 // Classification engine - maps keywords to craft families
 const CRAFT_KEYWORDS = {
@@ -345,33 +570,183 @@ function determineService(
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { intake_json, upload_ids = [] } = body;
+    const contentType = request.headers.get("content-type") || "";
+
+    let intake_json: any = null;
+    let sopFile: File | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const rawIntake = formData.get("intake_json");
+
+      if (typeof rawIntake !== "string") {
+        return NextResponse.json(
+          { error: "Missing intake_json payload." },
+          { status: 400 }
+        );
+      }
+
+      try {
+        intake_json = JSON.parse(rawIntake);
+      } catch (parseError) {
+        console.error("Failed to parse intake_json:", parseError);
+        return NextResponse.json(
+          { error: "Invalid intake_json payload." },
+          { status: 400 }
+        );
+      }
+
+      const potentialFile = formData.get("sopFile");
+      if (potentialFile instanceof File && potentialFile.size > 0) {
+        sopFile = potentialFile;
+      }
+    } else {
+      const body = await request.json();
+      intake_json = body?.intake_json;
+    }
+
+    const normalizedTasks = normalizeTasks(intake_json?.tasks_top5);
 
     // Validate required fields
-    if (!intake_json?.brand?.name || !intake_json?.tasks_top5?.length) {
+    if (!intake_json?.brand?.name || normalizedTasks.length === 0) {
       return NextResponse.json(
         { error: "Invalid intake data" },
         { status: 400 }
       );
     }
 
-    // Classification engine
-    const crafts = classifyTasks(
-      intake_json.tasks_top5,
-      intake_json.tools || [],
-      intake_json.outcome_90d || ""
+    const normalizedTools = normalizeStringArray(intake_json?.tools);
+    const normalizedRequirements = normalizeStringArray(
+      intake_json?.requirements
     );
+    const weeklyHours = Number(intake_json?.weekly_hours) || 0;
+    const clientFacing = Boolean(intake_json?.client_facing);
+    const outcome =
+      typeof intake_json?.outcome_90d === "string"
+        ? intake_json.outcome_90d
+        : "";
 
-    const splitLogic = determineSplitLogic(
-      crafts,
-      intake_json.weekly_hours,
-      intake_json.client_facing
-    );
+    const augmentedIntakeJson = {
+      ...intake_json,
+      tasks_top5: normalizedTasks,
+      tools: normalizedTools,
+      requirements: normalizedRequirements,
+      weekly_hours: weeklyHours,
+      client_facing: clientFacing,
+    };
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    let sopInsights: Record<string, unknown> | null = null;
+    let sopExcerpt: string | null = null;
+    let sopUsed = false;
+
+    if (sopFile) {
+      console.log(
+        "Processing SOP file:",
+        sopFile.name,
+        sopFile.type,
+        sopFile.size
+      );
+
+      const validation = validateSopFile(sopFile);
+      console.log("SOP file validation result:", validation);
+
+      if (!validation.valid) {
+        console.error("SOP validation failed:", validation.error);
+        return NextResponse.json({ error: validation.error }, { status: 400 });
+      }
+
+      let sopText: string | null = null;
+      try {
+        console.log("Attempting to extract text from SOP...");
+        sopText = await extractTextFromSop(sopFile);
+        console.log("Successfully extracted text, length:", sopText?.length);
+      } catch (extractionError) {
+        console.error("SOP extraction failed:", extractionError);
+        return NextResponse.json(
+          {
+            error:
+              extractionError instanceof Error
+                ? extractionError.message
+                : "Failed to parse the SOP file. Please upload a valid document.",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (sopText && isSopRelevant(sopText)) {
+        const truncatedForSummary = truncateForPrompt(
+          sopText,
+          SOP_SUMMARY_CHAR_LIMIT
+        );
+
+        try {
+          const summaryCompletion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are an assistant that reads SOP documents and extracts actionable insights. Respond with JSON containing up to 6 concise bullet points per array. Properties: processes[], workflows[], responsibilities[], tools_or_systems[], additional_notes[]. Use empty arrays when information is absent.",
+              },
+              {
+                role: "user",
+                content: `SOP DOCUMENT:\n${truncatedForSummary}`,
+              },
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.2,
+            max_tokens: 700,
+          });
+
+          const summaryContent = summaryCompletion.choices[0].message.content;
+          if (summaryContent) {
+            const parsedSummary = JSON.parse(summaryContent);
+            const hasMeaningfulData = Object.values(parsedSummary).some(
+              (value) => {
+                if (Array.isArray(value)) {
+                  return value.length > 0;
+                }
+                if (typeof value === "string") {
+                  return value.trim().length > 0;
+                }
+                return Boolean(value);
+              }
+            );
+
+            if (hasMeaningfulData) {
+              sopInsights = parsedSummary;
+              sopExcerpt = truncateForPrompt(sopText, SOP_EXCERPT_CHAR_LIMIT);
+              sopUsed = true;
+            }
+          }
+        } catch (summaryError) {
+          console.warn("SOP summary error:", summaryError);
+        }
+      }
+    }
+
+    const sopContextPrompt = sopInsights
+      ? `SOP INSIGHTS (incorporate these processes, workflows, and responsibilities into the JD where relevant):
+${JSON.stringify(sopInsights, null, 2)}
+
+SOP EXCERPT (truncated for reference):
+${sopExcerpt ?? ""}`
+      : sopFile
+      ? "An SOP file was uploaded but did not contain actionable process information. Proceed using the intake data without SOP augmentation."
+      : "No SOP file was provided. Rely solely on intake data.";
+
+    // Classification engine
+    const crafts = classifyTasks(normalizedTasks, normalizedTools, outcome);
+
+    const splitLogic = determineSplitLogic(crafts, weeklyHours, clientFacing);
 
     const serviceMapping = determineService(
       crafts,
-      intake_json.weekly_hours,
+      weeklyHours,
       splitLogic.shouldSplit
     );
 
@@ -394,8 +769,11 @@ PRINCIPLES:
 CLASSIFICATION RESULTS:
 ${JSON.stringify({ crafts, splitLogic, serviceMapping }, null, 2)}
 
+SOP CONTEXT:
+${sopContextPrompt}
+
 INTAKE DATA:
-${JSON.stringify(intake_json, null, 2)}
+${JSON.stringify(augmentedIntakeJson, null, 2)}
 
 KPI LIBRARY (use these as defaults, customize to the specific role):
 ${JSON.stringify(KPI_LIBRARY, null, 2)}
@@ -469,7 +847,7 @@ YOU MUST RESPOND WITH A COMPLETE JSON OBJECT CONTAINING ALL OF THE FOLLOWING:
         "Wed": "Detailed Wednesday activities",
         "Thu": "Detailed Thursday activities",
         "Fri": "Detailed Friday activities (include reporting/review rituals)"
-      },
+      ],
       
       "overlap_requirements": "Specific guidance on timezone overlap needs. Example: '2-3 hours daily overlap with EST for standup and real-time troubleshooting. Async-first otherwise.'",
       
@@ -541,11 +919,6 @@ CRITICAL REQUIREMENTS:
 
 Respond ONLY with the complete JSON object. No markdown, no explanations outside the JSON.`;
 
-    // Call OpenAI
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
-
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
@@ -568,14 +941,16 @@ Respond ONLY with the complete JSON object. No markdown, no explanations outside
     // Build comprehensive preview
     const preview = {
       summary: aiAnalysis.what_you_told_us,
-      primary_outcome: intake_json.outcome_90d,
+      primary_outcome: augmentedIntakeJson.outcome_90d,
       recommended_role: aiAnalysis.roles?.[0]?.title || "Unknown",
       role_purpose: aiAnalysis.roles?.[0]?.purpose || "",
       service_mapping: serviceMapping.service,
       weekly_hours:
-        aiAnalysis.roles?.[0]?.hours_per_week || intake_json.weekly_hours,
+        aiAnalysis.roles?.[0]?.hours_per_week ||
+        augmentedIntakeJson.weekly_hours,
       client_facing:
-        aiAnalysis.roles?.[0]?.client_facing ?? intake_json.client_facing,
+        aiAnalysis.roles?.[0]?.client_facing ??
+        augmentedIntakeJson.client_facing,
       core_outcomes: aiAnalysis.roles?.[0]?.core_outcomes || [],
       kpis: aiAnalysis.roles?.[0]?.kpis || [],
       key_tools: aiAnalysis.roles?.[0]?.tools?.slice(0, 5) || [],
@@ -590,6 +965,7 @@ Respond ONLY with the complete JSON object. No markdown, no explanations outside
         split_logic: splitLogic,
         service_mapping: serviceMapping,
       },
+      sop_context_used: sopUsed,
     });
   } catch (error) {
     console.error("JD Analysis error:", error);

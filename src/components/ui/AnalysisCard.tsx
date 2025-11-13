@@ -161,7 +161,20 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    preview: savedAnalysis.preview,
+                    preview: {
+                        summary: savedAnalysis.ai_analysis.what_you_told_us,
+                        primary_outcome: savedAnalysis.intakeData.outcome90Day,
+                        recommended_role: primaryRole?.title || '',
+                        role_purpose: primaryRole?.purpose || '',
+                        service_mapping: primaryRole?.service || '',
+                        weekly_hours: primaryRole?.hours_per_week || 0,
+                        client_facing: primaryRole?.client_facing ?? false,
+                        core_outcomes: primaryRole?.core_outcomes || [],
+                        kpis: primaryRole?.kpis || [],
+                        key_tools: primaryRole?.tools?.slice(0, 5) || [],
+                        risks: savedAnalysis.ai_analysis.risks || [],
+                    },
+                    ai_analysis: savedAnalysis.ai_analysis,
                 }),
             });
 
@@ -173,13 +186,13 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            
+
             // Get filename from response headers or use default
             const contentDisposition = response.headers.get('Content-Disposition');
             const filename = contentDisposition
                 ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || 'job-description-analysis.pdf'
                 : 'job-description-analysis.pdf';
-            
+
             a.download = filename;
             document.body.appendChild(a);
             a.click();
@@ -203,7 +216,7 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                     {/* LEFT SIDE */}
                     <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
-                            <h2 className="text-2xl font-bold text-[var(--primary)]">{savedAnalysis.title}</h2>
+                            <h2 className="text-2xl font-bold text-[var(--primary)] dark:text-white">{savedAnalysis.title}</h2>
                             {savedAnalysis.isFinalized && (
                                 <span className="px-3 py-1 text-xs font-semibold text-white bg-[var(--accent)] rounded-full">
                                     Finalized
@@ -255,8 +268,8 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                 {savedAnalysis.intakeData.companyName && (
                     <div className="mb-6 p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-800">
                         <div className="flex items-center gap-2 mb-2">
-                            <Briefcase className="w-4 h-4 text-[var(--primary)]" />
-                            <span className="font-semibold text-[var(--primary)]">{savedAnalysis.intakeData.companyName}</span>
+                            <Briefcase className="w-4 h-4 text-[var(--primary)] dark:text-[var(--accent)]" />
+                            <span className="font-semibold text-[var(--primary)] dark:text-[var(--accent)]">{savedAnalysis.intakeData.companyName}</span>
                         </div>
                         {savedAnalysis.intakeData.website && (
                             <a
@@ -272,54 +285,61 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                 )}
 
                 {/* Role Overview */}
-                <div className="mb-6">
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                        <div className="px-4 py-2 bg-[var(--primary)]/10 border border-[var(--primary)]/20 rounded-lg">
-                            <p className="text-[var(--primary)] font-semibold text-sm">{savedAnalysis.preview.recommended_role}</p>
+                {primaryRole && (
+                    <div className="mb-6">
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                            <div className="px-4 py-2 bg-[var(--primary)]/10 border border-[var(--primary)]/20 dark:border-[var(--accent)]/20 dark:bg-[var(--accent)]/10  rounded-lg">
+                                <p className="text-[var(--primary)]  dark:text-[var(--accent)] font-semibold text-sm">{primaryRole.title}</p>
+                            </div>
+                            <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                                <p className="text-zinc-700 dark:text-zinc-300 text-sm">{primaryRole.family} • {primaryRole.service}</p>
+                            </div>
+                            <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
+                                <p className="text-zinc-700 dark:text-zinc-300 text-sm">{primaryRole.hours_per_week}h/week</p>
+                            </div>
                         </div>
-                        <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                            <p className="text-zinc-700 dark:text-zinc-300 text-sm">{savedAnalysis.preview.service_mapping}</p>
-                        </div>
-                        <div className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg">
-                            <p className="text-zinc-700 dark:text-zinc-300 text-sm">{savedAnalysis.preview.weekly_hours}h/week</p>
-                        </div>
+                        {primaryRole.purpose && (
+                            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl mb-4">
+                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{primaryRole.purpose}</p>
+                            </div>
+                        )}
+                        {savedAnalysis.ai_analysis.what_you_told_us && (
+                            <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed text-sm">{savedAnalysis.ai_analysis.what_you_told_us}</p>
+                        )}
                     </div>
-                    {savedAnalysis.preview.summary && (
-                        <p className="text-zinc-700 dark:text-zinc-300 leading-relaxed text-sm">{savedAnalysis.preview.summary}</p>
-                    )}
-                </div>
+                )}
 
                 {/* Primary Outcome */}
-                {savedAnalysis.preview.primary_outcome && (
-                    <div className="mb-6 p-4 bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 rounded-xl border border-[var(--accent)] dark:border-emerald-800">
+                {savedAnalysis.intakeData.outcome90Day && (
+                    <div className="mb-6 p-4 bg-[var(--accent)]/10 dark:bg-[var(--accent)]/10 rounded-xl border border-[var(--accent)] dark:border-[var(--accent)]/20">
                         <div className="flex items-start gap-3">
                             <Target className="w-5 h-5 text-[var(--accent)] dark:text-[var(--accent)] mt-0.5 flex-shrink-0" />
                             <div>
                                 <h3 className="text-xs font-semibold text-[var(--accent)]/100 dark:text-[var(--accent)] uppercase tracking-wider mb-1">
                                     90-Day Outcome
                                 </h3>
-                                <p className="text-zinc-700 dark:text-zinc-300 text-sm">{savedAnalysis.preview.primary_outcome}</p>
+                                <p className="text-zinc-700 dark:text-zinc-300 text-sm">{savedAnalysis.intakeData.outcome90Day}</p>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {/* Core Outcomes Preview */}
-                {savedAnalysis.preview.core_outcomes && savedAnalysis.preview.core_outcomes.length > 0 && (
+                {primaryRole?.core_outcomes && primaryRole.core_outcomes.length > 0 && (
                     <div className="mb-6">
-                        <h3 className="text-xs font-bold text-[var(--primary)] dark:text-[var(--primary)] uppercase tracking-wider mb-3">
+                        <h3 className="text-xs font-bold text-[var(--primary)] dark:text-[var(--accent)] uppercase tracking-wider mb-3">
                             Core Outcomes
                         </h3>
                         <div className="grid gap-2">
-                            {savedAnalysis.preview.core_outcomes.slice(0, 3).map((outcome, idx) => (
+                            {primaryRole.core_outcomes.slice(0, 3).map((outcome, idx) => (
                                 <div key={idx} className="flex items-start gap-3 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-zinc-800">
-                                    <span className="text-[var(--primary)] mt-1 flex-shrink-0">•</span>
+                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1 flex-shrink-0">•</span>
                                     <p className="text-zinc-700 dark:text-zinc-300 text-sm">{outcome}</p>
                                 </div>
                             ))}
-                            {savedAnalysis.preview.core_outcomes.length > 3 && !isExpanded && (
+                            {primaryRole.core_outcomes.length > 3 && !isExpanded && (
                                 <p className="text-zinc-600 dark:text-zinc-400 text-sm text-center mt-1">
-                                    +{savedAnalysis.preview.core_outcomes.length - 3} more outcomes
+                                    +{primaryRole.core_outcomes.length - 3} more outcomes
                                 </p>
                             )}
                         </div>
@@ -339,16 +359,18 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
             </div>
 
             {/* Expanded Section */}
-            {isExpanded && (
+            {isExpanded && primaryRole && (
                 <div className="border-t border-zinc-200 dark:border-zinc-800 p-6 space-y-6">
 
                     {/* Key Tools */}
-                    {savedAnalysis.preview.key_tools && savedAnalysis.preview.key_tools.length > 0 && (
+                    {primaryRole.tools && primaryRole.tools.length > 0 && (
                         <div>
-                            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Key Tools & Platforms</h3>
+                            <h3 className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)] uppercase tracking-wider mb-3">
+                                Tools & Technologies
+                            </h3>
                             <div className="flex flex-wrap gap-2">
-                                {savedAnalysis.preview.key_tools.map((tool, idx) => (
-                                    <span key={idx} className="px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] border border-[var(--primary)]/20 rounded-lg text-xs font-medium">
+                                {primaryRole.tools.map((tool, idx) => (
+                                    <span key={idx} className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-medium">
                                         {tool}
                                     </span>
                                 ))}
@@ -357,15 +379,15 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                     )}
 
                     {/* KPIs */}
-                    {savedAnalysis.preview.kpis && savedAnalysis.preview.kpis.length > 0 && (
+                    {primaryRole.kpis && primaryRole.kpis.length > 0 && (
                         <div>
                             <h3 className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)] uppercase tracking-wider mb-3">
                                 Key Performance Indicators
                             </h3>
                             <ul className="space-y-2">
-                                {savedAnalysis.preview.kpis.map((kpi, idx) => (
+                                {primaryRole.kpis.map((kpi, idx) => (
                                     <li key={idx} className="flex items-start gap-2">
-                                        <span className="text-[var(--primary)] mt-1">•</span>
+                                        <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">•</span>
                                         <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">{kpi}</span>
                                     </li>
                                 ))}
@@ -385,7 +407,7 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                                     <ul className="space-y-3">
                                         {primaryRole.responsibilities.map((resp, idx) => (
                                             <li key={idx} className="flex items-start gap-3">
-                                                <span className="text-[var(--accent)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
+                                                <span className="text-[var(--accent)] dark:text-[var(--accent)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)] dark:bg-[var(--accent)]"></span>
                                                 <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 leading-relaxed">{resp}</span>
                                             </li>
                                         ))}
@@ -407,6 +429,21 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                                             </span>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Personality Traits */}
+                            {primaryRole.personality && primaryRole.personality.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)] uppercase tracking-wider mb-3">Personality Fit</h4>
+                                    <ul className="space-y-2">
+                                        {primaryRole.personality.map((trait, idx) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <span className="text-zinc-400 dark:text-zinc-600 mt-1">•</span>
+                                                <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">{trait}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             )}
 
@@ -449,28 +486,45 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                         </div>
                     )}
 
-                    {/* Risks */}
-                    {savedAnalysis.preview.risks && savedAnalysis.preview.risks.length > 0 && (
-                        <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
-                            <div className="flex items-center gap-2 mb-3">
-                                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Risks & Considerations</h3>
-                            </div>
-                            <ul className="space-y-2">
-                                {savedAnalysis.preview.risks.map((risk, idx) => (
-                                    <li key={idx} className="flex items-start gap-2">
-                                        <span className="text-black dark:text-black mt-1">•</span>
-                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{risk}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                    {/* Risks & Assumptions */}
+                    {(savedAnalysis.ai_analysis.risks?.length > 0 || savedAnalysis.ai_analysis.assumptions?.length > 0) && (
+                        <div className="space-y-4">
+                            {savedAnalysis.ai_analysis.risks && savedAnalysis.ai_analysis.risks.length > 0 && (
+                                <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Risks & Considerations</h3>
+                                    </div>
+                                    <ul className="space-y-2">
+                                        {savedAnalysis.ai_analysis.risks.map((risk, idx) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">•</span>
+                                                <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{risk}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                            {savedAnalysis.ai_analysis.assumptions && savedAnalysis.ai_analysis.assumptions.length > 0 && (
+                                <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
+                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">Assumptions</h3>
+                                    <ul className="space-y-2">
+                                        {savedAnalysis.ai_analysis.assumptions.map((assumption, idx) => (
+                                            <li key={idx} className="flex items-start gap-2">
+                                                <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">•</span>
+                                                <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{assumption}</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Service Recommendation */}
                     {savedAnalysis.ai_analysis.service_recommendation && (
-                        <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
-                            <p className="text-xs font-medium text-[var(--primary)] mb-2 uppercase tracking-wider">
+                        <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
+                            <p className="text-xs font-medium text-[var(--primary)] mb-2 uppercase tracking-wider dark:text-[var(--accent)]">
                                 Service Recommendation
                             </p>
                             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
@@ -487,7 +541,7 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                                     <ul className="space-y-1">
                                         {savedAnalysis.ai_analysis.service_recommendation.next_steps.map((step, index) => (
                                             <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                <span className="text-[var(--primary)] mt-1">→</span>
+                                                <span className="text-[var(--primary)] mt-1 dark:text-[var(--accent)]">→</span>
                                                 <span>{step}</span>
                                             </li>
                                         ))}
@@ -512,7 +566,7 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                                         <ul className="space-y-2">
                                             {savedAnalysis.ai_analysis.onboarding_2w.week_1.map((item, idx) => (
                                                 <li key={idx} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                    <span className="text-[var(--primary)] mt-1">•</span>
+                                                    <span className="text-[var(--primary)]  dark:text-[var(--accent)] mt-1">•</span>
                                                     <span>{item}</span>
                                                 </li>
                                             ))}
@@ -527,7 +581,7 @@ const AnalysisCard = ({ savedAnalysis, onDelete }: AnalysisCardProps) => {
                                         <ul className="space-y-2">
                                             {savedAnalysis.ai_analysis.onboarding_2w.week_2.map((item, idx) => (
                                                 <li key={idx} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                    <span className="text-[var(--primary)] mt-1">•</span>
+                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">•</span>
                                                     <span>{item}</span>
                                                 </li>
                                             ))}

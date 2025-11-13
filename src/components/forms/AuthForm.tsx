@@ -94,17 +94,21 @@ export default function AuthForm({
     const buttonLabel = submitLabel || (isSignup ? 'Sign up' : 'Sign in')
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 bg-white text-black">
+        <div className="min-h-screen flex items-center justify-center px-4 transition-colors duration-150" style={{ backgroundColor: "var(--background)", color: "var(--text-primary)" }}>
             <form
                 onSubmit={handleSubmit}
-                className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border border-black/10 bg-white/90 shadow-lg"
+                className="w-full max-w-md rounded-2xl px-8 pt-8 pb-10 border shadow-lg transition-all duration-150"
+                style={{
+                    borderColor: "var(--border-color)",
+                    backgroundColor: "var(--card-bg)"
+                }}
             >
                 <div className="mb-8">
-                    <p className="text-sm text-black/50 mb-1">Please enter details</p>
-                    <h2 className="text-2xl font-semibold text-black mb-2">{heading}</h2>
+                    <p className="text-sm mb-1 transition-colors duration-150" style={{ color: "var(--text-muted)" }}>Please enter details</p>
+                    <h2 className="text-2xl font-semibold mb-2 transition-colors duration-150" style={{ color: "var(--text-primary)" }}>{heading}</h2>
                     {errorMessage && (
-                        <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-md">
-                            <p className="text-sm text-red-600">{errorMessage}</p>
+                        <div className="mt-4 p-3 border rounded-md transition-colors duration-150" style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", borderColor: "rgba(239, 68, 68, 0.3)" }}>
+                            <p className="text-sm transition-colors duration-150" style={{ color: "rgb(220, 38, 38)" }}>{errorMessage}</p>
                         </div>
                     )}
                 </div>
@@ -114,7 +118,8 @@ export default function AuthForm({
                         <div>
                             <label
                                 htmlFor="firstname"
-                                className="block text-sm font-medium text-black/70 mb-1"
+                                className="block text-sm font-medium mb-1 transition-colors duration-150"
+                                style={{ color: "var(--text-secondary)" }}
                             >
                                 First name
                             </label>
@@ -126,13 +131,19 @@ export default function AuthForm({
                                 value={values.firstname || ''}
                                 onChange={handleChange}
                                 autoComplete="firstname"
-                                className="w-full px-3 py-2 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                                style={{
+                                    borderColor: "var(--border-color)",
+                                    backgroundColor: "var(--background)",
+                                    color: "var(--text-primary)"
+                                }}
                             />
                         </div>
                         <div>
                             <label
                                 htmlFor="lastname"
-                                className="block text-sm font-medium text-black/70 mb-1"
+                                className="block text-sm font-medium mb-1 transition-colors duration-150"
+                                style={{ color: "var(--text-secondary)" }}
                             >
                                 Last name
                             </label>
@@ -144,14 +155,19 @@ export default function AuthForm({
                                 value={values.lastname || ''}
                                 onChange={handleChange}
                                 autoComplete="lastname"
-                                className="w-full px-3 py-2 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                                style={{
+                                    borderColor: "var(--border-color)",
+                                    backgroundColor: "var(--background)",
+                                    color: "var(--text-primary)"
+                                }}
                             />
                         </div>
                     </div>
                 )}
 
                 <div className="mb-4">
-                    <label htmlFor="email" className="block text-sm font-medium text-black/70 mb-1">
+                    <label htmlFor="email" className="block text-sm font-medium mb-1 transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>
                         Email
                     </label>
                     <input
@@ -163,13 +179,18 @@ export default function AuthForm({
                         onChange={handleChange}
                         autoComplete="email"
                         required
-                        className="w-full px-3 py-2 border text-black border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                        style={{
+                            borderColor: "var(--border-color)",
+                            backgroundColor: "var(--background)",
+                            color: "var(--text-primary)"
+                        }}
                     />
                 </div>
 
                 {/* Password Field with Strength Checker */}
                 <div className={`relative ${isSignup ? 'mb-4' : 'mb-2'}`}>
-                    <label htmlFor="password" className="block text-sm font-medium text-black/70 mb-1">
+                    <label htmlFor="password" className="block text-sm font-medium mb-1 transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>
                         Password
                     </label>
                     <input
@@ -181,20 +202,30 @@ export default function AuthForm({
                         onChange={handleChange}
                         autoComplete={isSignup ? 'new-password' : 'current-password'}
                         required
-                        className="w-full px-3 py-2 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                        className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                        style={{
+                            borderColor: "var(--border-color)",
+                            backgroundColor: "var(--background)",
+                            color: "var(--text-primary)"
+                        }}
                     />
                     <button
                         type="button"
                         onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-[35px] text-black/50 hover:text-[var(--accent)] transition"
+                        className="absolute right-3 top-[35px] transition-colors duration-150"
+                        style={{ color: "var(--text-muted)" }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                        onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                     >
                         {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                     </button>
 
                     {isSignup && values.password.length > 0 && (
                         <p
-                            className={`mt-2 text-sm ${passwordStrength.valid ? 'text-green-600' : 'text-red-600'
-                                }`}
+                            className="mt-2 text-sm transition-colors duration-150"
+                            style={{
+                                color: passwordStrength.valid ? "rgb(22, 163, 74)" : "rgb(220, 38, 38)"
+                            }}
                         >
                             {passwordStrength.message}
                         </p>
@@ -206,7 +237,10 @@ export default function AuthForm({
                     <div className="flex justify-end mb-4">
                         <Link
                             href="/forgot-password"
-                            className="text-xs text-black/60 hover:text-[var(--accent)] transition"
+                            className="text-xs transition-colors duration-150"
+                            style={{ color: "var(--text-muted)" }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                            onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                         >
                             Forgot password?
                         </Link>
@@ -217,7 +251,8 @@ export default function AuthForm({
                     <div className="mb-6 relative">
                         <label
                             htmlFor="confirmPassword"
-                            className="block text-sm font-medium text-black/70 mb-1"
+                            className="block text-sm font-medium mb-1 transition-colors duration-150"
+                            style={{ color: "var(--text-secondary)" }}
                         >
                             Confirm password
                         </label>
@@ -230,12 +265,20 @@ export default function AuthForm({
                             onChange={handleChange}
                             autoComplete="new-password"
                             required
-                            className="w-full px-3 py-2 border border-black/20 rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition"
+                            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] transition-all duration-150"
+                            style={{
+                                borderColor: "var(--border-color)",
+                                backgroundColor: "var(--background)",
+                                color: "var(--text-primary)"
+                            }}
                         />
                         <button
                             type="button"
                             onClick={() => setShowConfirmPassword((prev) => !prev)}
-                            className="absolute right-3 top-[35px] text-black/50 hover:text-[var(--accent)] transition"
+                            className="absolute right-3 top-[35px] transition-colors duration-150"
+                            style={{ color: "var(--text-muted)" }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = "var(--accent)"}
+                            onMouseLeave={(e) => e.currentTarget.style.color = "var(--text-muted)"}
                         >
                             {showConfirmPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                         </button>
@@ -277,21 +320,27 @@ export default function AuthForm({
 
                 <div className="text-center">
                     {isSignup ? (
-                        <p className="text-sm text-black/70">
+                        <p className="text-sm transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>
                             Already have an account?{' '}
                             <Link
                                 href="/signin"
-                                className="font-medium text-[var(--accent)] hover:brightness-110 transition"
+                                className="font-medium transition-all duration-150"
+                                style={{ color: "var(--accent)" }}
+                                onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
+                                onMouseLeave={(e) => e.currentTarget.style.filter = "brightness(1)"}
                             >
                                 Sign in
                             </Link>
                         </p>
                     ) : (
-                        <p className="text-sm text-black/70">
+                        <p className="text-sm transition-colors duration-150" style={{ color: "var(--text-secondary)" }}>
                             Don't have an account yet?{' '}
                             <Link
                                 href="/signup"
-                                className="font-medium text-[var(--accent)] hover:brightness-110 transition"
+                                className="font-medium transition-all duration-150"
+                                style={{ color: "var(--accent)" }}
+                                onMouseEnter={(e) => e.currentTarget.style.filter = "brightness(1.1)"}
+                                onMouseLeave={(e) => e.currentTarget.style.filter = "brightness(1)"}
                             >
                                 Sign up
                             </Link>
