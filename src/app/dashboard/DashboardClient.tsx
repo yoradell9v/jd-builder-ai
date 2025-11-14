@@ -185,16 +185,33 @@ export default function DashboardClient({ user }: { user: User }) {
 
     // Download Analysis as PDF
     const handleDownload = async () => {
-        if (!analysisResult) return;
+        if (!analysisResult || !intakeData) return;
         setIsDownloading(true);
         console.log("Starting download of analysis as PDF:", analysisResult);
         try {
+            const primaryRole = analysisResult?.ai_analysis?.roles?.[0];
+            
             const response = await fetch('/api/jd/download', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(analysisResult),
+                body: JSON.stringify({
+                    preview: {
+                        summary: analysisResult.ai_analysis.what_you_told_us || analysisResult.preview.summary,
+                        primary_outcome: intakeData.outcome90Day,
+                        recommended_role: primaryRole?.title || '',
+                        role_purpose: primaryRole?.purpose || '',
+                        service_mapping: primaryRole?.service || '',
+                        weekly_hours: primaryRole?.hours_per_week || 0,
+                        client_facing: primaryRole?.client_facing ?? false,
+                        core_outcomes: primaryRole?.core_outcomes || [],
+                        kpis: primaryRole?.kpis || [],
+                        key_tools: primaryRole?.tools?.slice(0, 5) || [],
+                        risks: analysisResult.ai_analysis.risks || [],
+                    },
+                    ai_analysis: analysisResult.ai_analysis,
+                }),
             });
 
             if (!response.ok) {
@@ -205,7 +222,14 @@ export default function DashboardClient({ user }: { user: User }) {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'job-description-analysis.pdf';
+
+            // Get filename from response headers or use default
+            const contentDisposition = response.headers.get('Content-Disposition');
+            const filename = contentDisposition
+                ? contentDisposition.split('filename=')[1]?.replace(/"/g, '') || 'job-description-analysis.pdf'
+                : 'job-description-analysis.pdf';
+
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
