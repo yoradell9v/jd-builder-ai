@@ -430,19 +430,24 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                         {options.map((opt) => (
                                             <Listbox.Option
                                                 key={String(opt.value)}
-                                                className={({ active }) => classNames(
-                                                    "relative cursor-pointer select-none py-2 pl-9 pr-3 text-sm",
-                                                    active ? "bg-[var(--primary)]/20 text-zinc-900 dark:text-zinc-100" : "text-zinc-900 dark:text-zinc-100"
-                                                )}
+                                                className={({ active }) =>
+                                                    classNames(
+                                                        "relative cursor-pointer select-none py-2 pl-9 pr-3 text-sm",
+                                                        active
+                                                            ? "bg-[var(--primary)]/20 text-[var(--primary)] dark:bg-[var(--accent)]/30 dark:text-[var(--accent)]"
+                                                            : "text-zinc-900 dark:text-zinc-100"
+                                                    )
+                                                }
                                                 value={opt}
                                             >
+
                                                 {({ selected: isSelected }) => (
                                                     <>
-                                                        <span className={classNames("block truncate text-sm", isSelected && "text-[var(--primary)]")}>
+                                                        <span className={classNames("block truncate text-sm", isSelected && "text-[var(--primary)] dark:text-[var(--accent)] ")}>
                                                             {opt.label}
                                                         </span>
                                                         {isSelected && (
-                                                            <span className="absolute inset-y-0 left-2 flex items-center text-[var(--primary)]">
+                                                            <span className="absolute inset-y-0 left-2 flex items-center text-[var(--primary )] dark:text-[var(--accent)]">
                                                                 <CheckIcon className="h-4 w-4" aria-hidden="true" />
                                                             </span>
                                                         )}

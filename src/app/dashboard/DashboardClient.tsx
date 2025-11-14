@@ -1396,7 +1396,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                             <div
                                                 key={index}
                                                 className={`h-1.5 rounded-full transition-all flex-1 sm:flex-none ${index <= refineSectionIndex
-                                                    ? 'bg-[var(--primary)] sm:w-8'
+                                                    ? 'bg-[var(--primary)] dark:bg-[var(--accent)] sm:w-8'
                                                     : 'bg-zinc-200 dark:bg-zinc-800 sm:w-1.5'
                                                     }`}
                                             />
