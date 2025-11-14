@@ -14,7 +14,7 @@ async function getDashboardData() {
     }
 
     try {
-        const decoded = verifyAccessToken(accessToken);
+        const decoded = await verifyAccessToken(accessToken);
         console.log(`Decoded: ${decoded}`)
         if (!decoded) redirect("/signin");
 

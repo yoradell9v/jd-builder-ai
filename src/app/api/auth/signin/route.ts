@@ -26,12 +26,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const accessToken = generateAccessToken({
+    const accessToken = await generateAccessToken({
       userId: user.id,
       email: user.email,
     });
 
-    const refreshToken = generateRefreshToken({
+    const refreshToken = await generateRefreshToken({
       userId: user.id,
       email: user.email,
     });
