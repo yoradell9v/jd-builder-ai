@@ -11,7 +11,7 @@ export default async function SavedLayout({ children }: { children: React.ReactN
 
     if (!accessToken) redirect("/signin");
 
-    const decoded = verifyAccessToken(accessToken);
+    const decoded = await verifyAccessToken(accessToken);
     if (!decoded) redirect("/signin");
 
     const user = await prisma.user.findUnique({
