@@ -23,10 +23,13 @@ export function generateRefreshToken(payload: TokenPayload): string {
 }
 
 // Verify access token
+// lib/auth.ts
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as TokenPayload;
-  } catch {
+    const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload;
+    return decoded;
+  } catch (error: any) {
+    console.error("Token verification failed:", error.message); // ✅ Log the actual error
     return null;
   }
 }
