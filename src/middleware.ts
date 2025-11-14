@@ -4,29 +4,39 @@ import type { NextRequest } from "next/server";
 import { verifyAccessToken } from "@/lib/auth";
 
 export async function middleware(request: NextRequest) {
+  console.log("=== MIDDLEWARE RUNNING ===");
+  console.log("Path:", request.nextUrl.pathname);
+  console.log("All cookies:", request.cookies.getAll());
+
   const accessToken = request.cookies.get("accessToken")?.value;
 
-  console.log("=== MIDDLEWARE DEBUG ===");
-  console.log("Path:", request.nextUrl.pathname);
   console.log("Access token exists:", !!accessToken);
-  console.log("Access token value:", accessToken?.substring(0, 20) + "..."); // Log first 20 chars
+  console.log("Access token (first 50 chars):", accessToken?.substring(0, 50));
+  console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+  console.log(
+    "JWT_SECRET (first 10 chars):",
+    process.env.JWT_SECRET?.substring(0, 10)
+  );
 
-  // If access token is valid, continue
   if (accessToken) {
     try {
-      const isValid = verifyAccessToken(accessToken);
-      console.log("Token verification result:", isValid);
+      const decoded = verifyAccessToken(accessToken);
+      console.log("Verification result:", decoded);
 
-      if (isValid) {
-        console.log("✅ Token valid, allowing access");
+      if (decoded) {
+        console.log("✅ TOKEN VALID - Allowing access");
         return NextResponse.next();
+      } else {
+        console.log("❌ TOKEN INVALID - verifyAccessToken returned null");
       }
     } catch (error) {
-      console.error("❌ Token verification error:", error);
+      console.error("❌ ERROR during verification:", error);
     }
+  } else {
+    console.log("❌ NO ACCESS TOKEN FOUND");
   }
 
-  console.log("🔄 Redirecting to /signin");
+  console.log("🔄 REDIRECTING TO /signin");
   return NextResponse.redirect(new URL("/signin", request.url));
 }
 
