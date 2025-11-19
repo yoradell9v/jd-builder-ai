@@ -27,10 +27,13 @@ export default async function SavedLayout({ children }: { children: React.ReactN
 
     if (!user) redirect("/signin");
 
-    return <UserProvider
-        user={{
-            ...user,
-            createdAt: user.createdAt.toISOString(),
-        } as User}
-    >{children}</UserProvider>;
+    const userData: User = {
+        id: user.id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        email: user.email,
+        createdAt: user.createdAt.toISOString(),
+    };
+
+    return <UserProvider initialUser={userData}>{children}</UserProvider>;
 }

@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useUser } from "@/context/UserContext";
-import AnalysisCard from "@/components/ui/AnalysisCard";
+import AnalysisCard, { SavedAnalysis } from "@/components/ui/AnalysisCard";
 import { Loader2, FileText, AlertCircle } from "lucide-react";
 import Navbar from "@/components/ui/Navbar";
 
 export default function SavedPage() {
-    const user = useUser();
-    const [savedItems, setSavedItems] = useState<any[]>([]);
+    const { user } = useUser();
+    const [savedItems, setSavedItems] = useState<SavedAnalysis[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +30,10 @@ export default function SavedPage() {
                     throw new Error(`Failed to load saved analyses (${res.status})`);
                 }
                 const data = await res.json();
-
-                setSavedItems(data?.data?.analyses || []);
-                console.log("Fetched saved analyses:", data);
+                console.log("Raw data: ", data.data)
+                const analyses = (data?.data?.analyses ?? []) as SavedAnalysis[];
+                setSavedItems(analyses);
+                console.log("Fetched saved analyses:", analyses);
 
             } catch (err) {
                 console.error("Error fetching saved analyses:", err);
@@ -127,7 +128,7 @@ export default function SavedPage() {
             <div className="flex-1 overflow-hidden">
                 <div className="h-full mx-auto max-w-7xl px-4 pt-8 md:pt-12 pb-6 flex flex-col">
                     {/* Fixed Header */}
-                    <div className="flex-shrink-0 mb-6">
+                    <div className="flex-shrink-0 mb-6 space-y-6">
                         <div className="max-w-6xl mx-auto flex items-center justify-between">
                             {/* Left side: Title and subtitle */}
                             <div>
@@ -150,6 +151,7 @@ export default function SavedPage() {
                                 </a>
                             </div>
                         </div>
+
                     </div>
 
                     {/* Scrollable Cards Container */}

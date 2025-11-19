@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("accessToken")?.value;
 
   if (accessToken) {
-    const decoded = await verifyAccessToken(accessToken); // ✅ Now awaiting
+    const decoded = await verifyAccessToken(accessToken);
     if (decoded) {
       return NextResponse.next();
     }

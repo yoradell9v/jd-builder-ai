@@ -13,7 +13,7 @@ type ModalProps = {
   confirmText?: string | ReactNode;
   cancelText?: string;
   confirmVariant?: "primary" | "danger";
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl";
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" | "7xl";
 };
 
 export default function Modal({
@@ -28,13 +28,14 @@ export default function Modal({
   confirmVariant = "primary",
   maxWidth = "md",
 }: ModalProps) {
-  const maxWidthClasses = {
+  const maxWidthClasses: Record<"sm" | "md" | "lg" | "xl" | "2xl" | "4xl" | "7xl", string> = {
     sm: "max-w-sm",
     md: "max-w-md",
     lg: "max-w-lg",
     xl: "max-w-xl",
     "2xl": "max-w-2xl",
     "4xl": "max-w-4xl",
+    "7xl": "max-w-7xl",
   };
   if (!isOpen) return null;
 
@@ -105,12 +106,14 @@ export default function Modal({
                     {cancelText}
                   </button>
 
-                  <button
-                    onClick={onConfirm}
-                    className={`px-4 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-all duration-200 ${confirmButtonClasses}`}
-                  >
-                    {confirmText}
-                  </button>
+                  {confirmText && (
+                    <button
+                      onClick={onConfirm}
+                      className={`px-4 py-2.5 sm:py-2 text-sm font-medium rounded-lg transition-all duration-200 ${confirmButtonClasses}`}
+                    >
+                      {confirmText}
+                    </button>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -15,7 +15,6 @@ async function getDashboardData() {
 
     try {
         const decoded = await verifyAccessToken(accessToken);
-        console.log(`Decoded: ${decoded}`)
         if (!decoded) redirect("/signin");
 
         const user = await prisma.user.findUnique({

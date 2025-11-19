@@ -30,7 +30,7 @@ export default function SignInPage() {
                 return;
             }
             setTimeout(() => {
-                router.push("/dashboard");
+                router.push("/");
             }, 300);
 
 

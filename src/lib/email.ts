@@ -16,7 +16,6 @@ export async function sendPasswordResetEmail(
   resetToken: string
 ) {
   const resetUrl = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
-  console.log(`Reset reseturl : ${resetUrl}`);
 
   const mailOptions = {
     from: process.env.EMAIL_FROM || "noreply@yourapp.com",

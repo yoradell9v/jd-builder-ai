@@ -7,68 +7,329 @@ import IntakeForm from "@/components/forms/IntakeForm";
 import Loader from "@/components/ui/Loader";
 import Modal from "@/components/ui/Modal";
 import { useUser, User } from "@/context/UserContext";
+import { Briefcase, Sparkles, Clock, CheckCircle2, Flame, ShieldAlert, Flag, Activity, AlertTriangle, TrendingUp, Target, AlertCircle, Network, FileText, Lightbulb } from "lucide-react";
+import { getConfidenceValue } from '@/utils/confidence';
+import { getConfidenceColor } from "@/utils/confidence";
+import RefinementForm from "@/components/analysis/RefinementForm";
 
 interface AnalysisResult {
     preview: {
-        summary?: string;
-        primary_outcome: string;
-        recommended_role: string;
-        role_purpose?: string;
-        service_mapping: string;
-        weekly_hours?: number;
-        client_facing?: boolean;
-        core_outcomes?: string[];
-        kpis: string[];
-        key_tools?: string[];
-        risks: string[];
-    };
-    ai_analysis: {
-        what_you_told_us?: string;
-        roles?: Array<{
-            title: string;
-            family: string;
-            service: string;
-            hours_per_week: number;
-            client_facing: boolean;
-            purpose: string;
-            core_outcomes: string[];
-            responsibilities: string[];
-            skills: string[];
-            tools: string[];
-            kpis: string[];
-            personality: string[];
-            reporting_to: string;
-            sample_week: {
-                Mon: string;
-                Tue: string;
-                Wed: string;
-                Thu: string;
-                Fri: string;
+        summary: {
+            company_stage: string;
+            outcome_90d: string;
+            primary_bottleneck: string;
+            role_recommendation: string;
+            sop_status: {
+                has_sops: boolean;
+                pain_points: string[];
+                documentation_gaps: string[];
+                summary: string;
             };
-            overlap_requirements: string;
-            communication_norms: string;
-        }>;
-        split_table?: Array<{
-            role: string;
-            purpose: string;
-            core_outcomes: string[];
-            hrs: number;
-            service: string;
-        }>;
-        service_recommendation?: {
-            best_fit: string;
-            why: string;
-            cost_framing?: string;
-            next_steps: string[];
+            workflow_analysis: string;
         };
-        onboarding_2w?: {
-            week_1: string[];
-            week_2: string[];
-        };
-        risks: string[];
-        assumptions: string[];
+        primary_outcome: string;
+        service_type: string;
+        service_confidence: string;
+        service_reasoning: string;
+        confidence: string;
+        key_risks: string[];
+        critical_questions: string[];
+        core_va_title: string;
+        core_va_hours: string;
+        team_support_areas: number;
     };
-    classification: any;
+    full_package: {
+        service_structure: {
+            service_type: string;
+            core_va_role: {
+                title: string;
+                craft_family?: string;
+                hours_per_week: string | number;
+                core_responsibility: string;
+                recurring_tasks: string[];
+                skill_requirements: {
+                    required: string[];
+                    nice_to_have: string[];
+                }
+                workflow_ownership: string[];
+                interaction_model?: {
+                    reports_to?: string;
+                    collaborates_with?: string[];
+                    client_facing?: boolean;
+                    sync_needs?: string;
+                    timezone_criticality?: string;
+                };
+            }
+            team_support_areas: any,
+            coordination_model: string;
+            pros: [];
+            cons: [];
+            scaling_path: []
+            alternative_structure: any
+            alternative_consideration: any
+        }
+        executive_summary: {
+            what_you_told_us: {
+                company_stage: string;
+                outcome_90d: string;
+                primary_bottleneck: string;
+                role_recommendation: string;
+                sop_status: {
+                    has_sops: boolean;
+                    pain_points: string[];
+                    documentation_gaps: string[];
+                    summary: string;
+                };
+                workflow_analysis: string;
+            };
+            service_recommendation: {
+                type: string;
+                confidence: string;
+                reasoning: string;
+                why_not_other: string;
+            }
+            key_insights: string[];
+        };
+        detailed_specifications: {
+            core_va_jd: {
+                title: string;
+                hours_per_week: string;
+                mission_statement: string;
+                primary_outcome: string;
+                core_outcomes: string[];
+                responsibilities: any[];
+                skills_required: {
+                    technical: string[];
+                    soft: string[];
+                    domain: string[];
+                }
+                tools: any[];
+                kpis: any[];
+                personality_fit: any[]
+                sample_week: any;
+                communication_structure: any;
+                timezone_requirements?: any;
+                success_indicators: any
+            }
+            team_support_specs: any;
+        };
+        role_architecture: {
+            recommended_structure: {
+                scenario_name: string;
+                service_type: string;
+                total_cost_estimate: string;
+                roles: Array<{
+                    title: string;
+                    craft_family: string;
+                    hours_per_week: number;
+                    percentage_of_outcome: string;
+                    core_responsibility: string;
+                    task_allocation: {
+                        from_intake: string[];
+                        from_discovery: string[];
+                        estimated_breakdown: string;
+                    };
+                    skill_fit: {
+                        required_skills: string[];
+                        nice_to_have: string[];
+                        red_flags: string[];
+                    };
+                    workflow_ownership: string[];
+                    interaction_model: {
+                        reports_to: string;
+                        collaborates_with: string[];
+                        client_facing: boolean;
+                        sync_needs: string;
+                        timezone_criticality: string;
+                    };
+                }>;
+                pros: string[];
+                cons: string[];
+                best_for: string;
+                scaling_path: string;
+            };
+            alternative_scenarios: any[];
+            comparison_table: Array<{
+                option: string;
+                service: string;
+                roles: string;
+                total_hours: number;
+                cost_range: string;
+                best_for: string;
+                key_tradeoff: string;
+            }>;
+        };
+        implementation_plan: {
+            immediate_next_steps: Array<{
+                step: string;
+                owner: string;
+                timeline: string;
+                output: string;
+            }>;
+            onboarding_roadmap: {
+                week_1: string[];
+                week_2: string[];
+                week_3_4: string[];
+            };
+            success_milestones: {
+                week_2: string;
+                week_4: string;
+                week_8: string;
+                week_12: string;
+            };
+        };
+        risk_management: {
+            risks: Array<{
+                risk: string;
+                category: string;
+                severity: string;
+                likelihood: string;
+                impact: string;
+                mitigation: string;
+                early_warning_signs: string[];
+            }>;
+            assumptions: Array<{
+                assumption: string;
+                criticality: string;
+                validation_method: string;
+                if_wrong: string;
+            }>;
+            red_flags: Array<{
+                flag: string;
+                evidence: string;
+                recommendation: string;
+            }>;
+            monitoring_plan: {
+                high_priority_risks: Array<{
+                    risk: string;
+                    check_in: string;
+                    watch_for: string[];
+                }>;
+                quality_checks: Array<{
+                    checkpoint: string;
+                    assess: string[];
+                }>;
+                adjustment_triggers: Array<{
+                    trigger: string;
+                    action: string;
+                }>;
+            };
+        };
+        questions_for_you: Array<{
+            question: string;
+            why_it_matters: string;
+            assumption_if_unanswered: string;
+        }>;
+        validation_report: {
+            consistency_checks: {
+                hours_balance: {
+                    stated_hours: number;
+                    allocated_hours: number;
+                    sample_week_hours: number;
+                    issues: any[];
+                };
+                tool_alignment: {
+                    tools_in_intake: string[];
+                    tools_in_jd: string[];
+                    missing_from_jd: string[];
+                    not_in_intake: string[];
+                    recommendations: string[];
+                };
+                outcome_mapping: {
+                    client_goal: string;
+                    role_outcomes: string[];
+                    coverage: string;
+                    gaps: any[];
+                };
+                kpi_feasibility: Array<{
+                    kpi: string;
+                    measurable: boolean;
+                    instrumentation_exists: boolean;
+                    issue: string;
+                    recommendation: string;
+                }>;
+            };
+            quality_scores: {
+                jd_specificity: number;
+                role_clarity: number;
+                outcome_alignment: number;
+                personality_depth: number;
+                kpi_quality: number;
+                overall_confidence: string;
+                areas_to_strengthen: string[];
+            };
+            areas_needing_clarification: string[];
+        };
+        appendix: {
+            discovery_insights: {
+                business_context: {
+                    company_stage: string;
+                    primary_bottleneck: string;
+                    hidden_complexity: string;
+                    growth_indicators: string;
+                };
+                task_analysis: {
+                    task_clusters: Array<{
+                        cluster_name: string;
+                        tasks: string[];
+                        workflow_type: string;
+                        interdependencies: string[];
+                        complexity_score: number;
+                        estimated_hours_weekly: number;
+                    }>;
+                    skill_requirements: {
+                        technical: string[];
+                        soft: string[];
+                        domain: string[];
+                    };
+                    implicit_needs: string[];
+                };
+                sop_insights: {
+                    process_complexity: string;
+                    documented_workflows: any[];
+                    documentation_gaps: string[];
+                    handoff_points: string[];
+                    pain_points: string[];
+                    tools_mentioned: any[];
+                    implicit_requirements: string[];
+                };
+                context_gaps: Array<{
+                    question: string;
+                    why_it_matters: string;
+                    assumption_if_unanswered: string;
+                }>;
+                measurement_capability: {
+                    current_tracking: string[];
+                    tools_available: string[];
+                    tracking_gaps: string[];
+                    recommendations: string[];
+                };
+            };
+            alternative_architectures: any[];
+            measurement_recommendations: {
+                current_tracking: string[];
+                tools_available: string[];
+                tracking_gaps: string[];
+                recommendations: string[];
+            };
+        };
+    };
+    metadata?: {
+        stages_completed: string[];
+        sop_processed: boolean;
+        discovery_insights_count: number;
+        scenarios_evaluated: number;
+        risks_identified: number;
+        quality_scores: {
+            jd_specificity: number;
+            role_clarity: number;
+            outcome_alignment: number;
+            personality_depth: number;
+            kpi_quality: number;
+            overall_confidence: string;
+            areas_to_strengthen: string[];
+        };
+    };
 }
 
 interface IntakeFormData {
@@ -115,12 +376,12 @@ export default function DashboardClient({ user }: { user: User }) {
     //New Analysis State
     const [formKey, setFormKey] = useState(0);
 
-    //Refinement States
-    const [refineSectionIndex, setRefineSectionIndex] = useState(0);
-    const [refineFeedback, setRefineFeedback] = useState<Record<string, { satisfied: boolean | null; feedback: string }>>({});
-    const [isRefineSubmitting, setIsRefineSubmitting] = useState(false);
-    const [refineSubmitError, setRefineSubmitError] = useState<string | null>(null);
-    const [refineResult, setRefineResult] = useState<{ success: boolean; message: string; sections?: string[] } | null>(null);
+    //Download States
+    const [isDownloading, setIsDownloading] = useState(false);
+
+    //Tab States
+    const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'implementation' | 'risks'>('overview');
+    const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
 
     //Download States
     const [isDownloading, setIsDownloading] = useState(false);
@@ -133,16 +394,135 @@ export default function DashboardClient({ user }: { user: User }) {
         return `Good evening, ${user.firstname}`;
     };
 
-    //Handle Analysis Submission
-    const handleFormSuccess = ({ apiResult, input }: { apiResult: AnalysisResult; input: IntakeFormData }) => {
-        setIsProcessing(true);
-        setAnalysisResult(apiResult);
-        setIntakeData(input);
-        setSavedAnalysisId(null);
+    // Helper: Extract primary role from full_package
+    const getPrimaryRole = (result: AnalysisResult | null) => {
+        if (!result?.full_package) return null;
 
-        setTimeout(() => {
-            setIsProcessing(false);
-        }, 2000);
+        const pkg = result.full_package;
+        const serviceType = result.preview?.service_type;
+
+        // For Dedicated VA or Unicorn VA Service, get core VA role
+        if (serviceType === "Dedicated VA" || serviceType === "Unicorn VA Service") {
+            const coreRole = pkg.service_structure?.core_va_role;
+            const detailedJd = pkg.detailed_specifications?.core_va_jd;
+
+            if (coreRole) {
+                // Extract responsibilities from detailed JD
+                const responsibilities: string[] = [];
+                if (detailedJd?.responsibilities) {
+                    detailedJd.responsibilities.forEach((cat: any) => {
+                        if (cat?.details && Array.isArray(cat.details)) {
+                            cat.details.forEach((d: string) => responsibilities.push(String(d)));
+                        } else if (typeof cat === "string") {
+                            responsibilities.push(cat);
+                        }
+                    });
+                }
+
+                return {
+                    title: coreRole.title || detailedJd?.title || "",
+                    family: coreRole.craft_family || "",
+                    service: serviceType,
+                    hours_per_week: typeof coreRole.hours_per_week === "string"
+                        ? parseInt(coreRole.hours_per_week) || 0
+                        : coreRole.hours_per_week || 0,
+                    client_facing: coreRole.interaction_model?.client_facing || false,
+                    purpose: detailedJd?.mission_statement || coreRole.core_responsibility || "",
+                    core_outcomes: detailedJd?.core_outcomes || [],
+                    responsibilities: responsibilities.length > 0 ? responsibilities : (coreRole.recurring_tasks || []),
+                    skills: [
+                        ...(coreRole.skill_requirements?.required || []),
+                        ...(coreRole.skill_requirements?.nice_to_have || [])
+                    ],
+                    tools: detailedJd?.tools?.map((t: any) =>
+                        typeof t === "string" ? t : t.tool || ""
+                    ) || [],
+                    kpis: detailedJd?.kpis?.map((k: any) =>
+                        typeof k === "string" ? k : `${k.metric || ""}${k.target ? ` — ${k.target}` : ""}`
+                    ) || [],
+                    personality: detailedJd?.personality_fit?.map((p: any) =>
+                        typeof p === "string" ? p : p.trait || ""
+                    ) || [],
+                    reporting_to: coreRole.interaction_model?.reports_to || detailedJd?.communication_structure?.reporting_to || "",
+                    sample_week: detailedJd?.sample_week || {},
+                    overlap_requirements: coreRole.interaction_model?.timezone_criticality || detailedJd?.timezone_requirements?.overlap_needed || "",
+                    communication_norms: coreRole.interaction_model?.sync_needs || (detailedJd?.communication_structure ? JSON.stringify(detailedJd.communication_structure) : "") || "",
+                    percentage_of_outcome: 100,
+                };
+            }
+        }
+
+        return null;
+    };
+
+    //Handle Analysis Submission
+    const handleFormSuccess = ({ apiResult, input }: { apiResult: any; input: IntakeFormData }) => {
+        setIsProcessing(true);
+        try {
+            const result: AnalysisResult = {
+                preview: apiResult.preview ?? {
+                    summary: {
+                        company_stage: "",
+                        outcome_90d: "",
+                        primary_bottleneck: "",
+                        role_recommendation: "",
+                        sop_status: {
+                            has_sops: false,
+                            pain_points: [],
+                            documentation_gaps: [],
+                            summary: "",
+                        },
+                        workflow_analysis: "",
+                    },
+                    primary_outcome: "",
+                    service_type: "",
+                    service_confidence: "",
+                    service_reasoning: "",
+                    confidence: "",
+                    key_risks: [],
+                    critical_questions: [],
+                },
+                full_package: apiResult.full_package,
+                metadata: apiResult.metadata,
+            };
+            console.log("Processed API Result:", result);
+            setAnalysisResult(result);
+            setIntakeData(input);
+            setSavedAnalysisId(null);
+        } catch (e) {
+            console.error("Failed to process API result:", e);
+            setAnalysisResult({
+                preview: apiResult.preview ?? {
+                    summary: {
+                        company_stage: "",
+                        outcome_90d: "",
+                        primary_bottleneck: "",
+                        role_recommendation: "",
+                        sop_status: {
+                            has_sops: false,
+                            pain_points: [],
+                            documentation_gaps: [],
+                            summary: "",
+                        },
+                        workflow_analysis: "",
+                    },
+                    primary_outcome: "",
+                    service_type: "",
+                    service_confidence: "",
+                    service_reasoning: "",
+                    confidence: "",
+                    key_risks: [],
+                    critical_questions: [],
+                },
+                full_package: apiResult.full_package,
+                metadata: apiResult.metadata,
+            } as AnalysisResult);
+            setIntakeData(input);
+        } finally {
+            setTimeout(() => {
+                setIsProcessing(false);
+            }, 1200);
+        }
     };
 
     //Handle New Analysis - clears existing analysis if present
@@ -169,13 +549,36 @@ export default function DashboardClient({ user }: { user: User }) {
     };
 
     //Handle Refinement - opens the refinement modal
-    const handleRefineAnalysis = () => {
+    const handleRefineAnalysis = async () => {
         if (analysisResult) {
-            setRefineSubmitError(null);
+            // Auto-save if not already saved
+            if (!savedAnalysisId) {
+                const id = await handleSave(true); // true = automatic save
+                if (id) {
+                    setSavedAnalysisId(id);
+                }
+            }
             setShowRefineAnalysisModal(true);
         } else {
             setShowForm(true);
         }
+    }
+
+    //Handle refinement completion
+    const handleRefineComplete = (updatedAnalysis: AnalysisResult) => {
+        setAnalysisResult(updatedAnalysis);
+        setShowRefineAnalysisModal(false);
+    }
+
+    //Handle refinement completion from RefinementForm
+    const handleRefinementComplete = (refinedPackage: any) => {
+        // Transform refinedPackage to AnalysisResult format
+        const updatedAnalysis: AnalysisResult = {
+            preview: refinedPackage.preview || analysisResult?.preview,
+            full_package: refinedPackage.full_package || refinedPackage,
+            metadata: refinedPackage.metadata || analysisResult?.metadata,
+        };
+        handleRefineComplete(updatedAnalysis);
     }
 
     //Opens the download modal
@@ -185,7 +588,7 @@ export default function DashboardClient({ user }: { user: User }) {
 
     // Download Analysis as PDF
     const handleDownload = async () => {
-        if (!analysisResult || !intakeData) return;
+        if (!analysisResult) return;
         setIsDownloading(true);
         console.log("Starting download of analysis as PDF:", analysisResult);
         try {
@@ -243,211 +646,14 @@ export default function DashboardClient({ user }: { user: User }) {
         }
     };
 
-
     //Get the primary role from analysis
-    const primaryRole = analysisResult?.ai_analysis?.roles?.[0];
+    const primaryRole = getPrimaryRole(analysisResult);
+    console.log(primaryRole);
+    const implementationPlan = analysisResult?.full_package?.implementation_plan;
+    const riskManagement = analysisResult?.full_package?.risk_management;
+    const monitoringPlan = riskManagement?.monitoring_plan;
+    const summary = analysisResult?.preview?.summary || analysisResult?.full_package?.executive_summary?.what_you_told_us;
 
-    //Sections for refinement
-    const refineSections = useMemo(() => {
-        if (!analysisResult || !primaryRole) return [];
-
-        const sections = [];
-
-        sections.push({
-            id: 'role',
-            title: 'Recommended Role',
-            content: (
-                <div className="space-y-4">
-                    <div>
-                        <h4 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                            {primaryRole.title}
-                        </h4>
-                        <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
-                            {primaryRole.family} • {primaryRole.service}
-                        </p>
-                        {primaryRole.purpose && (
-                            <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                    {primaryRole.purpose}
-                                </p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            ),
-        });
-
-
-        if (primaryRole.core_outcomes && primaryRole.core_outcomes.length > 0) {
-            sections.push({
-                id: 'outcomes',
-                title: 'Core Outcomes (90 Days)',
-                content: (
-                    <ul className="space-y-3">
-                        {primaryRole.core_outcomes.map((outcome, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                                <span className="text-[var(--primary)] mt-1 flex-shrink-0">•</span>
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
-                                    {outcome}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ),
-            });
-        }
-
-
-        if (primaryRole.responsibilities && primaryRole.responsibilities.length > 0) {
-            sections.push({
-                id: 'responsibilities',
-                title: 'Key Responsibilities',
-                content: (
-                    <ul className="space-y-3">
-                        {primaryRole.responsibilities.map((resp, index) => (
-                            <li key={index} className="flex items-start gap-3">
-                                <span className="text-[var(--primary)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)]"></span>
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 leading-relaxed">
-                                    {resp}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ),
-            });
-        }
-
-        if ((primaryRole.skills && primaryRole.skills.length > 0) || (primaryRole.tools && primaryRole.tools.length > 0)) {
-            sections.push({
-                id: 'skills-tools',
-                title: 'Skills & Tools',
-                content: (
-                    <div className="space-y-4">
-                        {primaryRole.skills && primaryRole.skills.length > 0 && (
-                            <div>
-                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wide">
-                                    Required Skills
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {primaryRole.skills.map((skill, index) => (
-                                        <span
-                                            key={index}
-                                            className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-medium"
-                                        >
-                                            {skill}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {primaryRole.tools && primaryRole.tools.length > 0 && (
-                            <div>
-                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-3 uppercase tracking-wide">
-                                    Tools & Technologies
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {primaryRole.tools.map((tool, index) => (
-                                        <span
-                                            key={index}
-                                            className="px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-xs font-medium border border-[var(--primary)]/20"
-                                        >
-                                            {tool}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                ),
-            });
-        }
-
-        if (primaryRole.kpis && primaryRole.kpis.length > 0) {
-            sections.push({
-                id: 'kpis',
-                title: 'Key Performance Indicators',
-                content: (
-                    <ul className="space-y-2">
-                        {primaryRole.kpis.map((kpi, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                                <span className="text-[var(--primary)] mt-1">•</span>
-                                <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
-                                    {kpi}
-                                </span>
-                            </li>
-                        ))}
-                    </ul>
-                ),
-            });
-        }
-
-        if (analysisResult.ai_analysis.service_recommendation) {
-            sections.push({
-                id: 'service',
-                title: 'Service Recommendation',
-                content: (
-                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl">
-                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                            {analysisResult.ai_analysis.service_recommendation.best_fit}
-                        </p>
-                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-3">
-                            {analysisResult.ai_analysis.service_recommendation.why}
-                        </p>
-                        {analysisResult.ai_analysis.service_recommendation.next_steps && (
-                            <div>
-                                <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
-                                    Next Steps:
-                                </p>
-                                <ul className="space-y-1">
-                                    {analysisResult.ai_analysis.service_recommendation.next_steps.map((step, index) => (
-                                        <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                            <span className="text-[var(--primary)] mt-1">→</span>
-                                            <span>{step}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                ),
-            });
-        }
-
-        return sections;
-    }, [analysisResult, primaryRole]);
-
-    //Handlers for refinement modal
-    const handleRefineSectionChange = (direction: 'prev' | 'next') => {
-        setRefineSubmitError(null);
-        if (direction === 'next' && refineSectionIndex < refineSections.length - 1) {
-            setRefineSectionIndex(refineSectionIndex + 1);
-        } else if (direction === 'prev' && refineSectionIndex > 0) {
-            setRefineSectionIndex(refineSectionIndex - 1);
-        }
-    };
-
-    const handleRefineSatisfaction = (sectionId: string, satisfied: boolean) => {
-        setRefineFeedback(prev => ({
-            ...prev,
-            [sectionId]: {
-                ...prev[sectionId],
-                satisfied,
-                feedback: satisfied ? '' : (prev[sectionId]?.feedback || ''),
-            },
-        }));
-    };
-
-    const handleRefineFeedbackChange = (sectionId: string, feedback: string) => {
-        setRefineFeedback(prev => ({
-            ...prev,
-            [sectionId]: {
-                ...prev[sectionId],
-                feedback,
-            },
-        }));
-    };
-
-    //Handle Save Analysis
     const handleSave = useCallback(async (isAutomaticSave = false): Promise<string | null> => {
         if (!analysisResult || !intakeData) {
             setSaveResult({
@@ -459,9 +665,10 @@ export default function DashboardClient({ user }: { user: User }) {
         }
 
         try {
-            console.log("Role: ", analysisResult.ai_analysis?.roles?.[0]?.title);
+            const roleTitle = primaryRole?.title || analysisResult.preview?.core_va_title || 'Job Analysis';
+            console.log("Role: ", roleTitle);
             const title =
-                `${analysisResult.ai_analysis?.roles?.[0]?.title || 'Job Analysis'}` +
+                `${roleTitle}` +
                 (intakeData.companyName ? ` - ${intakeData.companyName}` : '');
             console.log("Is Automatic Save:", isAutomaticSave);
             const response = await fetch('/api/jd/save', {
@@ -509,304 +716,247 @@ export default function DashboardClient({ user }: { user: User }) {
     }, [analysisResult, intakeData, user.id]);
 
 
-    //Ensure we have a saved analysis ID before refinement submission, and save if not
-    const ensureSavedAnalysisId = useCallback(async (): Promise<string | null> => {
-        if (savedAnalysisId) {
-            console.log("Using existing savedAnalysisId:", savedAnalysisId);
-            return savedAnalysisId;
+    // Helper function to format and display results cleanly
+    function formatResultValue(value: any, depth: number = 0): React.ReactNode {
+        if (value === null || value === undefined) {
+            return <span className="text-sm text-zinc-400 italic">Not specified</span>;
         }
 
-        if (analysisResult && intakeData) {
-            console.log("No savedAnalysisId found - saving current analysis as draft");
-            const newSavedId = await handleSave(true);
-
-            if (newSavedId) {
-                console.log("Saved current analysis for refinement:", newSavedId);
-                return newSavedId;
-            } else {
-                console.error("Failed to save current analysis");
-                return null;
-            }
+        if (Array.isArray(value)) {
+            if (value.length === 0) return <span className="text-sm text-zinc-400 italic">No items</span>;
+            return (
+                <ul className="space-y-1.5">
+                    {value.map((item, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                            <span className="text-zinc-400 mt-1 flex-shrink-0 text-xs">•</span>
+                            <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
+                                {typeof item === 'string' ? item : formatResultValue(item, depth + 1)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            );
         }
 
-        console.error("No current analysis available to save for refinement");
-        return null;
-    }, [savedAnalysisId, user.id, analysisResult, intakeData, handleSave]);
-
-    //Close the refinement modal
-    const handleRefineModalClose = () => {
-        setShowRefineAnalysisModal(false);
-    };
-
-    const handleRefineReset = (preserveResult = false) => {
-        setRefineSectionIndex(0);
-        setRefineFeedback({});
-        setRefineSubmitError(null);
-        setIsRefineSubmitting(false);
-        if (!preserveResult) {
-            setRefineResult(null);
-        }
-    };
-
-    //Submit refinement feedback
-    const handleRefineSubmit = async () => {
-        if (refineSections.length === 0) {
-            setRefineSubmitError("No sections are available for refinement right now.");
-            return;
+        if (typeof value === 'object') {
+            const entries = Object.entries(value);
+            if (entries.length === 0) return <span className="text-sm text-zinc-400 italic">Empty</span>;
+            return (
+                <div className="space-y-3">
+                    {entries.map(([k, v], idx) => (
+                        <div key={idx} className={depth > 0 ? "pl-3 border-l border-zinc-200 dark:border-zinc-700" : ""}>
+                            <p className="text-xs font-medium text-[var(--primary)] uppercase tracking-wide mb-1.5">
+                                {k.replace(/_/g, ' ')}
+                            </p>
+                            <div className="text-sm text-zinc-700 dark:text-zinc-300">
+                                {formatResultValue(v, depth + 1)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
         }
 
-        if (refineSectionIndex < refineSections.length - 1) {
-            handleRefineSectionChange('next');
-            return;
-        }
-
-        if (isRefineSubmitting) {
-            return;
-        }
-
-        const actionableFeedback = Object.entries(refineFeedback).filter(
-            ([, value]) => value?.satisfied === false
-        );
-
-        if (actionableFeedback.length === 0) {
-            setRefineSubmitError("Please mark at least one section as not satisfied and provide feedback before submitting.");
-            return;
-        }
-
-        const targetAnalysisId = await ensureSavedAnalysisId();
-        console.log(`Target analysis: ${targetAnalysisId}`);
-
-        if (!targetAnalysisId) {
-            setRefineSubmitError("No saved analysis found. Please save your analysis before submitting refinements.");
-            return;
-        }
-
-        const messageLines = actionableFeedback.map(([sectionId, value]) => {
-            const sectionTitle = refineSections.find(section => section.id === sectionId)?.title || sectionId;
-            const feedbackText = value?.feedback?.trim()
-                ? value.feedback.trim()
-                : "No specific feedback provided, but this section needs improvement.";
-            return `Section "${sectionTitle}": ${feedbackText}`;
-        });
-
-        const message = `Please apply the following refinement feedback:\n${messageLines.join("\n")}`;
-
-        setIsRefineSubmitting(true);
-        setRefineSubmitError(null);
-
-        try {
-            const response = await fetch('/api/jd/refine', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId: user.id,
-                    analysisId: targetAnalysisId,
-                    message,
-                }),
-            });
-
-            const payload = await response.json().catch(() => null);
-
-            if (!response.ok || !payload?.success) {
-                const errorMessage = payload?.error || payload?.details || 'Failed to refine analysis';
-                throw new Error(errorMessage);
-            }
-
-            const updatedAnalysis = payload?.data?.updatedAnalysis;
-            if (updatedAnalysis) {
-                setAnalysisResult(prev => {
-                    if (updatedAnalysis?.ai_analysis || updatedAnalysis?.preview || updatedAnalysis?.classification) {
-                        const nextPreview =
-                            (updatedAnalysis as any)?.preview ||
-                            prev?.preview ||
-                            ({} as AnalysisResult["preview"]);
-                        const nextAiAnalysis =
-                            (updatedAnalysis as any)?.ai_analysis || updatedAnalysis;
-                        const nextClassification =
-                            (updatedAnalysis as any)?.classification ??
-                            prev?.classification ??
-                            null;
-
-                        if (!prev) {
-                            return {
-                                preview: nextPreview,
-                                ai_analysis: nextAiAnalysis,
-                                classification: nextClassification,
-                            } as AnalysisResult;
-                        }
-
-                        return {
-                            ...prev,
-                            preview: nextPreview,
-                            ai_analysis: nextAiAnalysis,
-                            classification: nextClassification,
-                        };
-                    }
-
-                    if (!prev) {
-                        return {
-                            preview: {} as AnalysisResult["preview"],
-                            ai_analysis: updatedAnalysis as AnalysisResult["ai_analysis"],
-                            classification: null,
-                        } as AnalysisResult;
-                    }
-
-                    return {
-                        ...prev,
-                        ai_analysis: updatedAnalysis as AnalysisResult["ai_analysis"],
-                    };
-                });
-            }
-
-            setRefineResult({
-                success: true,
-                message: payload?.data?.summary || 'Refinement applied successfully.',
-                sections: payload?.data?.changedSectionNames || [],
-            });
-            console.log("Refinement result:", payload?.data);
-            setShowRefineAnalysisModal(false);
-            setRefineSectionIndex(0);
-            setRefineFeedback({});
-            setRefineSubmitError(null);
-        } catch (error: any) {
-            console.error('Refine error:', error);
-            setRefineSubmitError(error?.message || 'Failed to submit refinement. Please try again.');
-        } finally {
-            setIsRefineSubmitting(false);
-        }
-    };
+        if (typeof value === 'boolean') return <span className="text-sm text-zinc-700 dark:text-zinc-300">{value ? 'Yes' : 'No'}</span>;
+        if (typeof value === 'number') return <span className="text-sm text-zinc-700 dark:text-zinc-300">{value}</span>;
+        return <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{String(value)}</p>;
+    }
 
     return (
         <div className="min-h-screen bg-white dark:bg-zinc-950 relative">
             <Navbar />
 
             {/* Main Content */}
-            <div className="mx-auto max-w-7xl px-4 pt-12 md:pt-16 pb-16"
-            >
+            <div className="mx-auto max-w-7xl px-4 pt-12 md:pt-16 pb-16">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left Column - Dashboard */}
-                    <div className="space-y-8">
+                    <div className="space-y-6">
                         <div>
                             <h1 className="text-4xl md:text-6xl font-medium text-zinc-900 dark:text-zinc-100 mb-2">
                                 {getCurrentGreeting()}
                             </h1>
                             <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400">
-                                Let's get started with your virtual assistant needs
+                                Let's find your perfect virtual assistant
                             </p>
                         </div>
 
-                        <div className="space-y-3">
-                            <button
-                                onClick={() => setShowForm(true)}
-                                className="w-full group relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 text-left transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg"
-                            >
-                                <div className="flex items-start gap-4 group">
-                                    <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center ring-1 ring-[var(--accent)]/30 shadow-[0_0_20px_var(--accent)/20] transition-all group-hover:shadow-[0_0_30px_var(--accent)/40]">
-                                        <svg
-                                            className="w-6 h-6 text-[var(--accent)]"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h2 className="text-base font-medium text-[var(--primary)] dark:text-zinc-100 mb-1">
-                                            Answer our form for us to better assess your needs
-                                        </h2>
-
-                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                                            Help us understand your business goals and find the perfect match
-                                        </p>
-                                    </div>
-                                    <svg
-                                        className="w-5 h-5 text-zinc-400 dark:text-zinc-600 group-hover:text-[var(--accent)] dark:group-hover:text-[var(--accent)] transition-colors flex-shrink-0"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <button
+                            onClick={() => setShowForm(true)}
+                            className="w-full group relative overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5 text-left transition-all hover:border-zinc-300 dark:hover:border-zinc-700 hover:shadow-lg"
+                        >
+                            <div className="flex items-start gap-4">
+                                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-[var(--accent)]/10 flex items-center justify-center ring-1 ring-[var(--accent)]/30">
+                                    <svg className="w-6 h-6 text-[var(--accent)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                     </svg>
                                 </div>
+                                <div className="flex-1">
+                                    <h2 className="text-base font-medium text-[var(--primary)] dark:text-zinc-100 mb-1">
+                                        Start New Analysis
+                                    </h2>
+                                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                        Answer a few questions to get your personalized recommendations
+                                    </p>
+                                </div>
+                                <svg className="w-5 h-5 text-zinc-400 group-hover:text-[var(--accent)] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                            </div>
+                        </button>
 
-                            </button>
-                        </div>
-
-                        {/* Summary Section - Hidden until analysis is available */}
                         <AnimatePresence>
                             {analysisResult && !isProcessing && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm"
+                                    className="bg-gradient-to-br from-white to-zinc-50/50 dark:from-zinc-900 dark:to-zinc-900/50 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm"
                                 >
-                                    <h3 className="text-lg font-semibold text-[var(--primary)] dark:text-white mb-3">
-                                        What You Told Us
-                                    </h3>
-                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                        {analysisResult.preview.summary || analysisResult.ai_analysis.what_you_told_us || "Summary of your requirements will appear here."}
-                                    </p>
+                                    {/* Header with optional collapse/edit actions */}
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-[var(--primary)] dark:text-white flex items-center gap-2">
+                                            <div className="w-8 h-8 rounded-lg bg-[var(--primary)]/10 flex items-center justify-center">
+                                                <Sparkles className="w-4 h-4 text-[var(--primary)]" />
+                                            </div>
+                                            What You Told Us
+                                        </h3>
+                                        <button
+                                            onClick={() => setShowForm(true)}
+                                            className="text-xs text-zinc-500 hover:text-[var(--primary)] dark:text-zinc-400 dark:hover:text-[var(--accent)] transition-colors flex items-center gap-1"
+                                        >
+                                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                            Edit
+                                        </button>
+                                    </div>
 
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        <AnimatePresence>
-                            {refineResult?.success && (
-                                <motion.div
-                                    key="refine-success"
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 shadow-sm relative"
-                                >
-                                    <button
-                                        onClick={() => setRefineResult(null)}
-                                        className="absolute top-4 right-4 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
-                                        aria-label="Dismiss"
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                    <h3 className="text-lg font-semibold text-[var(--primary)] dark:text-[var(--primary)]-100 mb-3 pr-8">
-                                        Refinements Applied
-                                    </h3>
-                                    {refineResult.sections && refineResult.sections.length > 0 && (
-                                        <div className="mb-3">
-                                            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">
-                                                Updated Sections
-                                            </p>
-                                            <div className="flex flex-wrap gap-2">
-                                                {refineResult.sections.map((section, index) => (
-                                                    <span
-                                                        key={index}
-                                                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-300"
-                                                    >
-                                                        {section}
-                                                    </span>
-                                                ))}
+                                    <div className="space-y-3">
+                                        {/* Company Stage with subtle background */}
+                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                                            <div className="w-9 h-9 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center flex-shrink-0">
+                                                <TrendingUp className="w-4.5 h-4.5 text-blue-600 dark:text-blue-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">Company Stage</span>
+                                                <p className="text-sm text-zinc-800 dark:text-zinc-200 mt-0.5 font-medium">{summary?.company_stage}</p>
                                             </div>
                                         </div>
-                                    )}
-                                    {/* <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                        {refineResult.message}
-                                    </p> */}
+
+                                        {/* 90-Day Outcome */}
+                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                                            <div className="w-9 h-9 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
+                                                <Target className="w-4.5 h-4.5 text-green-600 dark:text-green-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">90-Day Outcome</span>
+                                                <p className="text-sm text-zinc-800 dark:text-zinc-200 mt-0.5 font-medium leading-relaxed">{summary?.outcome_90d}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Primary Bottleneck - Enhanced emphasis */}
+                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                                            <div className="relative flex items-start gap-3">
+                                                <div className="w-9 h-9 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0 ring-2 ring-amber-200 dark:ring-amber-800">
+                                                    <AlertCircle className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-xs uppercase tracking-wide">Primary Bottleneck</span>
+                                                        <span className="px-2 py-0.5 text-xs font-medium bg-amber-200 dark:bg-amber-900/50 text-amber-800 dark:text-amber-300 rounded-full">
+                                                            High Priority
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-medium leading-relaxed">
+                                                        {summary?.primary_bottleneck}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Workflow Analysis with label */}
+                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                                            <div className="w-9 h-9 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center flex-shrink-0">
+                                                <Network className="w-4.5 h-4.5 text-purple-600 dark:text-purple-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1 block">Workflow Analysis</span>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{summary?.workflow_analysis}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* SOP Status with label */}
+                                        <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-zinc-800/30 border border-zinc-100 dark:border-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 transition-colors">
+                                            <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center flex-shrink-0">
+                                                <FileText className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-1 block">
+                                                    Documentation Status
+                                                </span>
+
+                                                {/* Summary text */}
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-3">
+                                                    {typeof summary?.sop_status === 'string'
+                                                        ? summary.sop_status
+                                                        : summary?.sop_status?.summary}
+                                                </p>
+
+                                                {/* Show details if SOPs exist */}
+                                                {summary?.sop_status?.has_sops && (
+                                                    <div className="space-y-3 mt-2">
+                                                        {/* Pain Points */}
+                                                        {summary.sop_status.pain_points?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1.5 flex items-center gap-1">
+                                                                    <AlertCircle className="w-3 h-3" />
+                                                                    Process Pain Points
+                                                                </p>
+                                                                <ul className="space-y-1">
+                                                                    {summary.sop_status.pain_points.map((point: string, idx: number) => (
+                                                                        <li key={idx} className="text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-1.5 pl-2">
+                                                                            <span className="text-red-400 mt-0.5">•</span>
+                                                                            <span>{point}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Documentation Gaps */}
+                                                        {summary.sop_status.documentation_gaps?.length > 0 && (
+                                                            <div>
+                                                                <p className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-1.5 flex items-center gap-1">
+                                                                    <FileText className="w-3 h-3" />
+                                                                    Documentation Gaps
+                                                                </p>
+                                                                <ul className="space-y-1">
+                                                                    {summary.sop_status.documentation_gaps.map((gap: string, idx: number) => (
+                                                                        <li key={idx} className="text-xs text-zinc-600 dark:text-zinc-400 flex items-start gap-1.5 pl-2">
+                                                                            <span className="text-amber-400 mt-0.5">•</span>
+                                                                            <span>{gap}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Optional: Quick stats footer */}
+                                    <div className="mt-5 pt-4 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                                        <span>Analysis generated {new Date().toLocaleDateString()}</span>
+                                        <span className="flex items-center gap-1">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                                            Verified
+                                        </span>
+                                    </div>
                                 </motion.div>
                             )}
                         </AnimatePresence>
-
                     </div>
 
                     {/* Right Column - Results */}
@@ -818,15 +968,14 @@ export default function DashboardClient({ user }: { user: User }) {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-lg"
+                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8"
                                 >
                                     <div className="text-center mb-6">
                                         <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
                                             Processing your analysis
                                         </h3>
                                         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                                            Generating your personalized job description...
+                                            This may take a moment...
                                         </p>
                                     </div>
                                     <Loader />
@@ -837,10 +986,9 @@ export default function DashboardClient({ user }: { user: User }) {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 shadow-lg overflow-hidden"
+                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 overflow-hidden"
                                 >
-                                    {/* Header */}
+                                    {/* Header with Actions Menu */}
                                     <div className="p-6 border-b border-zinc-200 dark:border-zinc-800">
                                         <div className="flex items-start justify-between">
                                             <div>
@@ -848,425 +996,884 @@ export default function DashboardClient({ user }: { user: User }) {
                                                     Analysis Results
                                                 </h3>
                                                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                                                    Comprehensive job description analysis
+                                                    {primaryRole?.title || 'Your recommendations'}
                                                 </p>
                                             </div>
-                                            <div className="flex items-center gap-2">
 
-                                                {/* Edit Button */}
-                                                <div className="relative group">
-                                                    <button
-                                                        onClick={handleRefineAnalysis}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200"
-                                                    >
-                                                        <svg
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            className="w-5 h-5"
-                                                            fill="none"
-                                                            viewBox="0 0 24 24"
-                                                            stroke="currentColor"
-                                                            strokeWidth={2}
+                                            {/* Actions Dropdown */}
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
+                                                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                                                    </svg>
+                                                </button>
+
+                                                {actionsMenuOpen && (
+                                                    <div className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg shadow-lg z-10">
+                                                        <button
+                                                            onClick={() => { handleRefineAnalysis(); setActionsMenuOpen(false); }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-3"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                d="M11 5h2m-1-1v2m-4.293 9.293l6.586-6.586a2 2 0 112.828 2.828l-6.586 6.586H7v-2.828z"
-                                                            />
-                                                        </svg>
-                                                    </button>
-
-                                                    <div className="absolute right-0 top-full mt-2 px-2.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-10 shadow-lg">
-                                                        Refine Analysis
-                                                        <div className="absolute -top-1 right-3 w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45"></div>
-                                                    </div>
-                                                </div>
-
-                                                {/* New Analysis Button */}
-                                                <div className="relative group">
-                                                    <button
-                                                        onClick={handleNewAnalysis}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200"
-                                                    >
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5h2m-1-1v2m-4.293 9.293l6.586-6.586a2 2 0 112.828 2.828l-6.586 6.586H7v-2.828z" />
+                                                            </svg>
+                                                            Refine Analysis
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { handleNewAnalysis(); setActionsMenuOpen(false); }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-3"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M12 4v16m8-8H4"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                    <div className="absolute right-0 top-full mt-2 px-2.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-10 shadow-lg">
-                                                        New Analysis
-                                                        <div className="absolute -top-1 right-3 w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45"></div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Download Button */}
-                                                <div className="relative group">
-                                                    <button
-                                                        onClick={openDownload}
-                                                        disabled={!analysisResult}
-                                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    >
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                                            </svg>
+                                                            New Analysis
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { openDownload(); setActionsMenuOpen(false); }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-3"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                    <div className="absolute right-0 top-full mt-2 px-2.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-10 shadow-lg">
-                                                        Download Job Description
-                                                        <div className="absolute -top-1 right-3 w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45"></div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Saved Analysis Button */}
-                                                <div className="relative group">
-                                                    <button
-                                                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:border-zinc-300 dark:hover:border-zinc-700 transition-all duration-200"
-                                                        onClick={() => handleSave()}
-                                                    >
-                                                        <svg
-                                                            className="w-4 h-4"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                            </svg>
+                                                            Download PDF
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { handleSave(); setActionsMenuOpen(false); }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 flex items-center gap-3 border-t border-zinc-200 dark:border-zinc-800"
                                                         >
-                                                            <path
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                strokeWidth={2}
-                                                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                                                            />
-                                                        </svg>
-                                                    </button>
-                                                    <div className="absolute right-0 top-full mt-2 px-2.5 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 text-xs font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-200 z-10 shadow-lg">
-                                                        Save
-                                                        <div className="absolute -top-1 right-3 w-2 h-2 bg-zinc-900 dark:bg-zinc-100 rotate-45"></div>
+                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                                                            </svg>
+                                                            Save
+                                                        </button>
                                                     </div>
-                                                </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Scrollable Content */}
-                                    <div className="p-6 space-y-6 max-h-[calc(100vh-12rem)] overflow-y-auto">
-                                        {/* Recommended Role */}
-                                        {primaryRole && (
-                                            <div className="space-y-4">
-                                                <div>
-                                                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">
-                                                        Recommended Role
-                                                    </p>
-                                                    <h4 className="text-xl font-semibold text-[var(--primary)] dark:text-zinc-100 mb-1">
-                                                        {primaryRole.title}
-                                                    </h4>
-
-                                                    <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                                                        {primaryRole.family} • {primaryRole.service}
-                                                    </p>
-                                                </div>
-
-                                                {primaryRole.purpose && (
-                                                    <div className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl">
-                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                            {primaryRole.purpose}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Core Outcomes */}
-                                        {primaryRole?.core_outcomes && primaryRole.core_outcomes.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Core Outcomes (90 Days)
-                                                </p>
-
-                                                <ul className="space-y-2">
-                                                    {primaryRole.core_outcomes.map((outcome, index) => (
-                                                        <li key={index} className="flex items-start gap-3">
-                                                            <span className="text-[var(--primary)] mt-1 flex-shrink-1 dark:text-zinc-600">•</span>
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
-                                                                {outcome}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Responsibilities */}
-                                        {primaryRole?.responsibilities && primaryRole.responsibilities.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Key Responsibilities
-                                                </p>
-                                                <ul className="space-y-3">
-                                                    {primaryRole.responsibilities.map((resp, index) => (
-                                                        <li key={index} className="flex items-start gap-3">
-                                                            <span className="text-[var(--accent)] mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--primary)] dark:bg-zinc-600"></span>
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1 leading-relaxed">
-                                                                {resp}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Skills */}
-                                        {primaryRole?.skills && primaryRole.skills.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Required Skills
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {primaryRole.skills.map((skill, index) => (
-                                                        <span
-                                                            key={index}
-                                                            className="px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg text-xs font-medium"
-                                                        >
-                                                            {skill}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Tools */}
-                                        {primaryRole?.tools && primaryRole.tools.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Tools & Technologies
-                                                </p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {primaryRole.tools.map((tool, index) => (
-                                                        <span
-                                                            key={index}
-                                                            className="px-3 py-1.5 bg-[var(--primary)]/10 text-[var(--primary)] rounded-lg text-xs font-medium border border-[var(--primary)]/20 dark:border-[var(--accent)]/30 dark:text-[var(--accent)] dark:bg-[var(--accent)]/10"
-                                                        >
-                                                            {tool}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* KPIs */}
-                                        {primaryRole?.kpis && primaryRole.kpis.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Key Performance Indicators
-                                                </p>
-                                                <ul className="space-y-2">
-                                                    {primaryRole.kpis.map((kpi, index) => (
-                                                        <li key={index} className="flex items-start gap-2">
-                                                            <span className="text-[var(--primary)] dark:text-zinc-600 mt-1">•</span>
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
-                                                                {kpi}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Personality Traits */}
-                                        {primaryRole?.personality && primaryRole.personality.length > 0 && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Personality Fit
-                                                </p>
-                                                <ul className="space-y-2">
-                                                    {primaryRole.personality.map((trait, index) => (
-                                                        <li key={index} className="flex items-start gap-2">
-                                                            <span className="text-zinc-400 dark:text-zinc-600 mt-1">•</span>
-                                                            <span className="text-sm text-zinc-700 dark:text-zinc-300 flex-1">
-                                                                {trait}
-                                                            </span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Sample Week */}
-                                        {primaryRole?.sample_week && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    Sample Week
-                                                </p>
-                                                <div className="space-y-3">
-                                                    {Object.entries(primaryRole.sample_week).map(([day, activities]) => (
-                                                        <div key={day} className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                            <p className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 mb-1 uppercase">
-                                                                {day}
-                                                            </p>
-                                                            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                                {activities}
-                                                            </p>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Communication & Overlap */}
-                                        {(primaryRole?.communication_norms || primaryRole?.overlap_requirements) && (
-                                            <div className="space-y-3">
-                                                {primaryRole.overlap_requirements && (
-                                                    <div>
-                                                        <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                            Overlap Requirements
-                                                        </p>
-                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                            {primaryRole.overlap_requirements}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                                {primaryRole.communication_norms && (
-                                                    <div>
-                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2 uppercase tracking-wide">
-                                                            Communication Norms
-                                                        </p>
-                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                            {primaryRole.communication_norms}
-                                                        </p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Service Recommendation */}
-                                        {analysisResult.ai_analysis.service_recommendation && (
-                                            <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
-                                                <p className="text-xs font-medium text-[var(--primary)] mb-2 uppercase tracking-wide dark:text-[var(--accent)]">
-                                                    Service Recommendation
-                                                </p>
-                                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                    {analysisResult.ai_analysis.service_recommendation.best_fit}
-                                                </p>
-                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-3">
-                                                    {analysisResult.ai_analysis.service_recommendation.why}
-                                                </p>
-                                                {analysisResult.ai_analysis.service_recommendation.next_steps && (
-                                                    <div>
-                                                        <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mb-2">
-                                                            Next Steps:
-                                                        </p>
-                                                        <ul className="space-y-1">
-                                                            {analysisResult.ai_analysis.service_recommendation.next_steps.map((step, index) => (
-                                                                <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-1">→</span>
-                                                                    <span>{step}</span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        {/* Onboarding Plan */}
-                                        {analysisResult.ai_analysis.onboarding_2w && (
-                                            <div>
-                                                <p className="text-xs font-bold text-[var(--accent)] dark:text-[var(--accent)]-400 mb-3 uppercase tracking-wide">
-                                                    2-Week Onboarding Plan
-                                                </p>
-                                                <div className="space-y-4">
-                                                    {analysisResult.ai_analysis.onboarding_2w.week_1 && (
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                                Week 1
-                                                            </p>
-                                                            <ul className="space-y-2">
-                                                                {analysisResult.ai_analysis.onboarding_2w.week_1.map((task, index) => (
-                                                                    <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                                        <span className="text-[var(--primary)] mt-1">•</span>
-                                                                        <span>{task}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
-                                                    {analysisResult.ai_analysis.onboarding_2w.week_2 && (
-                                                        <div>
-                                                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                                Week 2
-                                                            </p>
-                                                            <ul className="space-y-2">
-                                                                {analysisResult.ai_analysis.onboarding_2w.week_2.map((task, index) => (
-                                                                    <li key={index} className="flex items-start gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                                                                        <span className="text-[var(--primary)] mt-1">•</span>
-                                                                        <span>{task}</span>
-                                                                    </li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {/* Risks & Assumptions */}
-                                        {(analysisResult.ai_analysis.risks?.length > 0 || analysisResult.ai_analysis.assumptions?.length > 0) && (
-                                            <div className="space-y-4">
-                                                {analysisResult.ai_analysis.risks?.length > 0 && (
-                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
-                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                            Risks & Considerations
-                                                        </p>
-                                                        <ul className="space-y-2">
-                                                            {analysisResult.ai_analysis.risks.map((risk, index) => (
-                                                                <li key={index} className="flex items-start gap-2">
-                                                                    <span className="text-black dark:text-zinc-300 mt-1">•</span>
-                                                                    <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                                        {risk}
-                                                                    </span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                                {analysisResult.ai_analysis.assumptions?.length > 0 && (
-                                                    <div className="p-4 bg-[var(--primary)]/5 border border-[var(--primary)]/20 rounded-xl dark:bg-zinc-800 dark:border-zinc-700">
-                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                            Assumptions
-                                                        </p>
-                                                        <ul className="space-y-2">
-                                                            {analysisResult.ai_analysis.assumptions.map((assumption, index) => (
-                                                                <li key={index} className="flex items-start gap-2">
-                                                                    <span className="text-[var(--primary)] dark:text-zinc-300 mt-1">•</span>
-                                                                    <span className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
-                                                                        {assumption}
-                                                                    </span>
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                    {/* Tabs Navigation */}
+                                    <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-6">
+                                        <button
+                                            onClick={() => setActiveTab('overview')}
+                                            className={`px-4 py-3 text-sm font-medium transition-colors relative ${activeTab === 'overview'
+                                                ? 'text-[var(--primary)] dark:text-[var(--accent)]'
+                                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
+                                                }`}
+                                        >
+                                            Overview
+                                            {activeTab === 'overview' && (
+                                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] dark:bg-[var(--accent)]" />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('roles')}
+                                            className={`px-4 py-3 text-sm font-medium transition-colors relative ${activeTab === 'roles'
+                                                ? 'text-[var(--primary)] dark:text-[var(--accent)]'
+                                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
+                                                }`}
+                                        >
+                                            Detailed JD
+                                            {activeTab === 'roles' && (
+                                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] dark:bg-[var(--accent)]" />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('implementation')}
+                                            className={`px-4 py-3 text-sm font-medium transition-colors relative ${activeTab === 'implementation'
+                                                ? 'text-[var(--primary)] dark:text-[var(--accent)]'
+                                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
+                                                }`}
+                                        >
+                                            Implementation
+                                            {activeTab === 'implementation' && (
+                                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] dark:bg-[var(--accent)]" />
+                                            )}
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveTab('risks')}
+                                            className={`px-4 py-3 text-sm font-medium transition-colors relative ${activeTab === 'risks'
+                                                ? 'text-[var(--primary)] dark:text-[var(--accent)]'
+                                                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-300'
+                                                }`}
+                                        >
+                                            Risks
+                                            {activeTab === 'risks' && (
+                                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--primary)] dark:bg-[var(--accent)]" />
+                                            )}
+                                        </button>
                                     </div>
 
+                                    {/* Tab Content */}
+                                    <div className="p-6 max-h-[calc(100vh-16rem)] overflow-y-auto">
+                                        <AnimatePresence mode="wait">
+                                            {activeTab === 'overview' && (
+                                                <motion.div
+                                                    key="overview"
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: -20 }}
+                                                    className="space-y-6"
+                                                >
+                                                    {/* Recommended Service Type */}
+                                                    {analysisResult.preview.service_type && (
+                                                        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-5 bg-white dark:bg-zinc-900">
+                                                            {/* Header */}
+                                                            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+                                                                Recommended Service Type
+                                                            </p>
+
+                                                            {/* Service Type with Icon */}
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                                <Sparkles className="w-5 h-5 text-[var(--accent)]" />
+                                                                <p className="text-xl font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                    {analysisResult.preview.service_type}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Description */}
+                                                            {analysisResult.preview.service_reasoning && (
+                                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed mb-4">
+                                                                    {analysisResult.preview.service_reasoning}
+                                                                </p>
+                                                            )}
+
+                                                            {/* Confidence with Progress Bar */}
+                                                            {analysisResult.preview.service_confidence && (
+                                                                <div className="space-y-2">
+                                                                    <div className="flex items-center justify-between">
+                                                                        <span className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 uppercase">
+                                                                            Confidence
+                                                                        </span>
+                                                                        <span className="text-sm font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                            {analysisResult.preview.service_confidence}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="w-full h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className={`h-full ${getConfidenceColor(analysisResult.preview.service_confidence)} transition-all duration-500 rounded-full`}
+                                                                            style={{ width: `${getConfidenceValue(analysisResult.preview.service_confidence)}%` }}
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Core VA Role */}
+                                                    {analysisResult.preview.core_va_title && (
+                                                        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-5 bg-white dark:bg-zinc-900">
+                                                            {/* Header */}
+                                                            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+                                                                Core Role
+                                                            </p>
+
+                                                            {/* Job Title with Icon */}
+                                                            <div className="flex items-center gap-2 mb-4">
+                                                                <Briefcase className="w-5 h-5 text-[var(--accent)]" />
+                                                                <p className="text-xl font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                    {analysisResult.preview.core_va_title}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Details */}
+                                                            <div className="space-y-3">
+                                                                {analysisResult.preview.core_va_hours && (
+                                                                    <div>
+                                                                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                                                            Hours per Week:
+                                                                        </span>
+                                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 ml-2">
+                                                                            {analysisResult.preview.core_va_hours}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {analysisResult.preview.team_support_areas && (
+                                                                    <div>
+                                                                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                                                            Team Support Areas:
+                                                                        </span>
+                                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 ml-2">
+                                                                            {analysisResult.preview.team_support_areas}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {analysisResult.preview.primary_outcome && (
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                            Primary Outcome
+                                                                        </p>
+                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                            {analysisResult.preview.primary_outcome}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
 
 
+                                                </motion.div>
+                                            )}
+
+                                            {activeTab === 'roles' && (
+                                                <motion.div
+                                                    key="roles"
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: -20 }}
+                                                    className="space-y-4"
+                                                >
+                                                    {analysisResult.full_package?.service_structure && (
+                                                        <div className="space-y-4">
+
+                                                            {/* Core VA Role */}
+                                                            {analysisResult.full_package.service_structure.core_va_role && (
+                                                                <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                    <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex-1">
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+                                                                                    Core VA Role
+                                                                                </p>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <Briefcase className="w-5 h-5 text-[var(--accent)]" />
+                                                                                    <h4 className="text-lg font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        {analysisResult.full_package.service_structure.core_va_role.title}
+                                                                                    </h4>
+                                                                                </div>
+                                                                                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.hours_per_week} hrs/week
+                                                                                </p>
+                                                                            </div>
+                                                                            <svg
+                                                                                className="w-5 h-5 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </summary>
+
+                                                                    <div className="p-4 space-y-4 bg-white dark:bg-zinc-900">
+                                                                        {/* Core Responsibility */}
+                                                                        {analysisResult.full_package.service_structure.core_va_role.core_responsibility && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Core Responsibility
+                                                                                </p>
+                                                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.core_responsibility}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Recurring Tasks */}
+                                                                        {analysisResult.full_package.service_structure.core_va_role.recurring_tasks?.length > 0 && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Recurring Tasks
+                                                                                </p>
+                                                                                <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.recurring_tasks.map((task, i) => (
+                                                                                        <li key={i}>{task}</li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Skill Requirements */}
+                                                                        {analysisResult.full_package.service_structure.core_va_role.skill_requirements && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Skill Requirements
+                                                                                </p>
+                                                                                <div className="space-y-3">
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.skill_requirements.required?.length > 0 && (
+                                                                                        <div>
+                                                                                            <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                Required
+                                                                                            </p>
+                                                                                            <div className="flex flex-wrap gap-2">
+                                                                                                {analysisResult.full_package.service_structure.core_va_role.skill_requirements.required.map((skill, i) => (
+                                                                                                    <span key={i} className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-md">
+                                                                                                        {skill}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.skill_requirements.nice_to_have?.length > 0 && (
+                                                                                        <div>
+                                                                                            <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                Nice to Have
+                                                                                            </p>
+                                                                                            <div className="flex flex-wrap gap-2">
+                                                                                                {analysisResult.full_package.service_structure.core_va_role.skill_requirements.nice_to_have.map((skill, i) => (
+                                                                                                    <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-md">
+                                                                                                        {skill}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Workflow Ownership */}
+                                                                        {analysisResult.full_package.service_structure.core_va_role.workflow_ownership?.length > 0 && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Workflow Ownership
+                                                                                </p>
+                                                                                <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                    {analysisResult.full_package.service_structure.core_va_role.workflow_ownership.map((workflow, i) => (
+                                                                                        <li key={i}>{workflow}</li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </details>
+                                                            )}
+
+                                                            {/* Team Support Areas */}
+                                                            {analysisResult.full_package.service_structure.team_support_areas?.length > 0 && (
+                                                                <div className="space-y-3">
+                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                                                                        Team Support Areas
+                                                                    </p>
+                                                                    {analysisResult.full_package.service_structure.team_support_areas.map((area: any, idx: any) => (
+                                                                        <details key={idx} className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <div>
+                                                                                        <h5 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                            {area.skill_category}
+                                                                                        </h5>
+                                                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                                                            ~{area.estimated_hours_monthly} hrs/month
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <svg
+                                                                                        className="w-5 h-5 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                        fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        viewBox="0 0 24 24"
+                                                                                    >
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                    </svg>
+                                                                                </div>
+                                                                            </summary>
+
+                                                                            <div className="p-4 space-y-3 bg-white dark:bg-zinc-900">
+                                                                                {/* Use Cases */}
+                                                                                {area.use_cases?.length > 0 && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Use Cases
+                                                                                        </p>
+                                                                                        <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                            {area.use_cases.map((uc: any, i: any) => (
+                                                                                                <li key={i}>{uc}</li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Deliverables */}
+                                                                                {area.deliverables?.length > 0 && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Deliverables
+                                                                                        </p>
+                                                                                        <div className="flex flex-wrap gap-2">
+                                                                                            {area.deliverables.map((del: any, i: any) => (
+                                                                                                <span key={i} className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs rounded-md">
+                                                                                                    {del}
+                                                                                                </span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Why Team Not VA */}
+                                                                                {area.why_team_not_va && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Why Team Support?
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                            {area.why_team_not_va}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Example Requests */}
+                                                                                {area.example_requests?.length > 0 && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Example Requests
+                                                                                        </p>
+                                                                                        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-400 italic">
+                                                                                            {area.example_requests.map((req: any, i: any) => (
+                                                                                                <li key={i}>• {req}</li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </details>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Coordination Model */}
+                                                            {analysisResult.full_package.service_structure.coordination_model && (
+                                                                <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 bg-white dark:bg-zinc-900">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <Network className="w-4 h-4 text-[var(--primary)]" />
+                                                                        <p className="text-xs font-semibold text-[var(--primary)] uppercase">
+                                                                            Coordination Model
+                                                                        </p>
+                                                                    </div>
+                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                        {analysisResult.full_package.service_structure.coordination_model}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Pros & Cons */}
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                                {analysisResult.full_package.service_structure.pros?.length > 0 && (
+                                                                    <div className="border border-[var(--accent)]/30 rounded-lg p-4 bg-[var(--accent)]/10">
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            <CheckCircle2 className="w-4 h-4 text-[var(--accent)]" />
+                                                                            <p className="text-xs font-semibold text-[var(--accent)] uppercase">
+                                                                                Pros
+                                                                            </p>
+                                                                        </div>
+                                                                        <ul className="space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                            {analysisResult.full_package.service_structure.pros.map((pro, i) => (
+                                                                                <li key={i}>✓ {pro}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                                {analysisResult.full_package.service_structure.cons?.length > 0 && (
+                                                                    <div className="border border-[var(--primary)]/30 rounded-lg p-4 bg-[var(--primary)]/10">
+                                                                        <div className="flex items-center gap-2 mb-2">
+                                                                            <AlertCircle className="w-4 h-4 text-[var(--primary)]" />
+                                                                            <p className="text-xs font-semibold text-[var(--primary)] uppercase">
+                                                                                Cons
+                                                                            </p>
+                                                                        </div>
+                                                                        <ul className="space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                            {analysisResult.full_package.service_structure.cons.map((con, i) => (
+                                                                                <li key={i}>• {con}</li>
+                                                                            ))}
+                                                                        </ul>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Scaling Path */}
+                                                            {analysisResult.full_package.service_structure.scaling_path && (
+                                                                <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 bg-white dark:bg-zinc-900">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <TrendingUp className="w-4 h-4 text-[var(--accent)]" />
+                                                                        <p className="text-xs font-semibold text-[var(--accent)] uppercase">
+                                                                            Scaling Path
+                                                                        </p>
+                                                                    </div>
+                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                        {analysisResult.full_package.service_structure.scaling_path}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Alternative Consideration */}
+                                                            {analysisResult.full_package.service_structure.alternative_consideration && (
+                                                                <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-4 bg-white dark:bg-zinc-900">
+                                                                    <div className="flex items-center gap-2 mb-2">
+                                                                        <Lightbulb className="w-4 h-4 text-[var(--primary)]" />
+                                                                        <p className="text-xs font-semibold text-[var(--primary)] uppercase">
+                                                                            Alternative Consideration
+                                                                        </p>
+                                                                    </div>
+                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                        {analysisResult.full_package.service_structure.alternative_consideration}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )}
+
+                                            {activeTab === 'implementation' && (
+                                                <motion.div
+                                                    key="implementation"
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: -20 }}
+                                                    className="space-y-6"
+                                                >
+                                                    {analysisResult.full_package?.implementation_plan && (
+                                                        <div className="space-y-6">
+                                                            {implementationPlan?.immediate_next_steps && implementationPlan.immediate_next_steps.length > 0 && (
+                                                                <div className="space-y-3">
+                                                                    {implementationPlan.immediate_next_steps.map((item, index) => (
+                                                                        <div key={index} className="pb-3 border-b border-zinc-200 dark:border-zinc-800 last:border-0 last:pb-0">
+                                                                            <div className="flex items-start gap-3">
+                                                                                <span className="text-xs font-medium text-zinc-400 dark:text-zinc-500 mt-0.5 min-w-[20px]">
+                                                                                    {index + 1}.
+                                                                                </span>
+                                                                                <div className="flex-1 space-y-1.5">
+                                                                                    <h5 className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                                                                        {item.step}
+                                                                                    </h5>
+                                                                                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                                                                                        <span><span className="font-medium">Owner:</span> {item.owner}</span>
+                                                                                        <span><span className="font-medium">Timeline:</span> {item.timeline}</span>
+                                                                                    </div>
+                                                                                    {item.output && (
+                                                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                                                                                            {item.output}
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {analysisResult.full_package?.implementation_plan?.onboarding_roadmap && (
+                                                                <div className="space-y-3">
+                                                                    <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Onboarding Roadmap</h4>
+                                                                    {Object.entries(analysisResult.full_package.implementation_plan.onboarding_roadmap)
+                                                                        .map(([weekKey, jobGroups]) => (
+                                                                            <details
+                                                                                key={weekKey}
+                                                                                className="group"
+                                                                            >
+                                                                                <summary className="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 py-2 flex items-center justify-between">
+                                                                                    <span>{weekKey.replace(/_/g, " ")}</span>
+                                                                                    <svg
+                                                                                        className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                        fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        viewBox="0 0 24 24"
+                                                                                    >
+                                                                                        <path
+                                                                                            strokeLinecap="round"
+                                                                                            strokeLinejoin="round"
+                                                                                            strokeWidth={2}
+                                                                                            d="M19 9l-7 7-7-7"
+                                                                                        />
+                                                                                    </svg>
+                                                                                </summary>
+                                                                                <div className="pl-4 mt-2 space-y-3 border-l border-zinc-200 dark:border-zinc-800">
+                                                                                    {Object.entries(
+                                                                                        typeof jobGroups === "object" && !Array.isArray(jobGroups)
+                                                                                            ? (jobGroups as Record<string, string[] | undefined>)
+                                                                                            : {}
+                                                                                    ).map(([title, tasks]) => {
+                                                                                        const taskList = Array.isArray(tasks) ? tasks : [];
+                                                                                        return (
+                                                                                            <div key={title} className="space-y-1.5">
+                                                                                                <h6 className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                                                                                                    {title}
+                                                                                                </h6>
+                                                                                                <ul className="space-y-1 pl-3">
+                                                                                                    {taskList.map((task: string, idx: number) => (
+                                                                                                        <li key={idx} className="text-xs text-zinc-600 dark:text-zinc-400">
+                                                                                                            • {task}
+                                                                                                        </li>
+                                                                                                    ))}
+                                                                                                </ul>
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
+                                                                                </div>
+                                                                            </details>
+                                                                        ))
+                                                                    }
+                                                                </div>
+                                                            )}
+
+
+                                                        </div>
+                                                    )}
+
+                                                </motion.div>
+                                            )}
+
+                                            {activeTab === 'risks' && (
+                                                <motion.div
+                                                    key="risks"
+                                                    initial={{ opacity: 0, x: 20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: -20 }}
+                                                    className="space-y-6"
+                                                >
+                                                    {riskManagement && (
+                                                        <div>
+                                                            <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)] mb-4">
+                                                                Risk Management
+                                                            </h4>
+
+                                                            {riskManagement && (
+                                                                <div className="space-y-4">
+
+                                                                    {/* ASSUMPTIONS */}
+                                                                    {riskManagement.assumptions?.length > 0 && (
+                                                                        <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[color:var(--accent)/15%]">
+                                                                                        <AlertTriangle className="w-4 h-4 text-[var(--accent)]" />
+                                                                                    </div>
+
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        Assumptions
+                                                                                    </h4>
+                                                                                </div>
+
+                                                                                <svg
+                                                                                    className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    viewBox="0 0 24 24"
+                                                                                >
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div className="p-4 bg-white dark:bg-zinc-900 space-y-4">
+                                                                                {riskManagement.assumptions.map((a, i) => (
+                                                                                    <div key={i} className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                                                                                            {a.assumption}
+                                                                                        </p>
+
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Criticality:</span> {a.criticality}
+                                                                                        </p>
+
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">If wrong:</span> {a.if_wrong}
+                                                                                        </p>
+
+                                                                                        {a.validation_method && (
+                                                                                            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                                <span className="font-medium">Validation:</span> {a.validation_method}
+                                                                                            </p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </details>
+                                                                    )}
+
+                                                                    {/* HIGH PRIORITY RISKS */}
+                                                                    {monitoringPlan?.high_priority_risks && monitoringPlan.high_priority_risks.length > 0 && (
+                                                                        <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[color:var(--accent)/15%]">
+                                                                                        <Flame className="w-4 h-4 text-[var(--accent)]" />
+                                                                                    </div>
+
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        High Priority Risks
+                                                                                    </h4>
+                                                                                </div>
+
+                                                                                <svg className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div className="p-4 bg-white dark:bg-zinc-900 space-y-4">
+                                                                                {monitoringPlan?.high_priority_risks?.map((risk, i) => (
+                                                                                    <div key={i} className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <p className="text-sm font-semibold">{risk.risk}</p>
+
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Check-in:</span> {risk.check_in}
+                                                                                        </p>
+
+                                                                                        {risk.watch_for?.length > 0 && (
+                                                                                            <ul className="list-disc ml-4 text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                                {risk.watch_for.map((wf, idx) => (
+                                                                                                    <li key={idx}>{wf}</li>
+                                                                                                ))}
+                                                                                            </ul>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </details>
+                                                                    )}
+
+                                                                    {/* GENERAL RISKS */}
+                                                                    {riskManagement.risks?.length > 0 && (
+                                                                        <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[color:var(--accent)/15%]">
+                                                                                        <ShieldAlert className="w-4 h-4 text-[var(--accent)]" />
+                                                                                    </div>
+
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        Risks
+                                                                                    </h4>
+                                                                                </div>
+
+                                                                                <svg className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div className="p-4 bg-white dark:bg-zinc-900 space-y-4">
+                                                                                {riskManagement.risks.map((r, i) => (
+                                                                                    <div key={i} className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <p className="text-sm font-semibold">{r.risk}</p>
+
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Category:</span> {r.category}
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Severity:</span> {r.severity}
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Likelihood:</span> {r.likelihood}
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Impact:</span> {r.impact}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </details>
+                                                                    )}
+
+                                                                    {/* RED FLAGS */}
+                                                                    {riskManagement.red_flags?.length > 0 && (
+                                                                        <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[color:var(--accent)/15%]">
+                                                                                        <Flag className="w-4 h-4 text-[var(--accent)]" />
+                                                                                    </div>
+
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        Red Flags
+                                                                                    </h4>
+                                                                                </div>
+
+                                                                                <svg className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div className="p-4 bg-white dark:bg-zinc-900 space-y-4">
+                                                                                {riskManagement.red_flags.map((rf, i) => (
+                                                                                    <div key={i} className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <p className="text-sm font-semibold">{rf.flag}</p>
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Evidence:</span> {rf.evidence}
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                            <span className="font-medium">Recommendation:</span> {rf.recommendation}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                ))}
+                                                                            </div>
+                                                                        </details>
+                                                                    )}
+
+                                                                    {/* MONITORING PLAN */}
+                                                                    {((monitoringPlan?.adjustment_triggers && monitoringPlan.adjustment_triggers.length > 0) || (monitoringPlan?.quality_checks && monitoringPlan.quality_checks.length > 0)) && (
+                                                                        <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 flex items-center justify-between list-none [&::-webkit-details-marker]:hidden hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className="w-7 h-7 rounded-full flex items-center justify-center bg-[color:var(--accent)/15%]">
+                                                                                        <Activity className="w-4 h-4 text-[var(--accent)]" />
+                                                                                    </div>
+
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        Monitoring & Quality Checks
+                                                                                    </h4>
+                                                                                </div>
+
+                                                                                <svg className="w-4 h-4 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </summary>
+
+                                                                            <div className="p-4 bg-white dark:bg-zinc-900 space-y-4">
+
+                                                                                {/* Adjustment Triggers */}
+                                                                                {monitoringPlan?.adjustment_triggers && monitoringPlan.adjustment_triggers.length > 0 && (
+                                                                                    <div className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <h5 className="font-semibold text-sm mb-2">Adjustment Triggers</h5>
+                                                                                        {monitoringPlan.adjustment_triggers.map((t, i) => (
+                                                                                            <p key={i} className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                                <span className="font-medium">{t.trigger}:</span> {t.action}
+                                                                                            </p>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Quality Checks */}
+                                                                                {monitoringPlan?.quality_checks && monitoringPlan.quality_checks.length > 0 && (
+                                                                                    <div className="border-l pl-3 border-zinc-300 dark:border-zinc-700">
+                                                                                        <h5 className="font-semibold text-sm mb-2">Quality Checks</h5>
+                                                                                        {monitoringPlan.quality_checks.map((qc, i) => (
+                                                                                            <div key={i} className="mb-3">
+                                                                                                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                                                                                    {qc.checkpoint}
+                                                                                                </p>
+                                                                                                {qc.assess?.length > 0 && (
+                                                                                                    <ul className="list-disc ml-4 text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                                        {qc.assess.map((item, idx) => (
+                                                                                                            <li key={idx}>{item}</li>
+                                                                                                        ))}
+                                                                                                    </ul>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+
+                                                                            </div>
+                                                                        </details>
+                                                                    )}
+
+                                                                </div>
+                                                            )}
+
+                                                        </div>
+                                                    )}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -1274,39 +1881,20 @@ export default function DashboardClient({ user }: { user: User }) {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 shadow-lg text-center"
+                                    className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-8 text-center"
                                 >
-                                    <div className="text-zinc-400 dark:text-zinc-600 mb-4">
-                                        <svg
-                                            className="w-16 h-16 mx-auto text-[var(--accent)]"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={1.5}
-                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-
-                                    </div>
-                                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                        No analysis yet
-                                    </h3>
-                                    <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-6">
-                                        Fill out the form to generate your personalized job description
-                                    </p>
+                                    <svg className="w-16 h-16 mx-auto text-zinc-300 dark:text-zinc-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                    <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">No analysis yet</h3>
+                                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Start by filling out the form</p>
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
-
                 </div>
-            </div>
 
-            {/* Modal Transition Wrapper */}
+            </div>
             <AnimatePresence>
                 {showForm && (
                     <motion.div
@@ -1355,194 +1943,291 @@ export default function DashboardClient({ user }: { user: User }) {
                 confirmVariant="danger"
             />
 
-            {/* Refine Analysis Modal */}
+            {/* Refine Analysis Component */}
             <Modal
                 isOpen={showRefineAnalysisModal}
-                onClose={() => {
-                    handleRefineModalClose();
-                    // Preserve result if submission was successful
-                    handleRefineReset(refineResult?.success === true);
-                }}
-                onConfirm={handleRefineSubmit}
+                onClose={() => setShowRefineAnalysisModal(false)}
                 title="Refine Analysis"
-                message="Review each section and provide feedback on what needs improvement."
-                confirmText={
-                    // Replace plain text with a React node
-                    refineSectionIndex === refineSections.length - 1 ? (
-                        isRefineSubmitting ? (
-                            <div className="flex items-center gap-2">
-                                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                    <circle
-                                        className="opacity-25"
-                                        cx="12"
-                                        cy="12"
-                                        r="10"
-                                        stroke="currentColor"
-                                        strokeWidth="4"
-                                        fill="none"
-                                    />
-                                    <path
-                                        className="opacity-75"
-                                        fill="currentColor"
-                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                    />
-                                </svg>
-                                <span>Submitting...</span>
-                            </div>
-                        ) : (
-                            "Submit Refinement"
-                        )
-                    ) : (
-                        "Next"
-                    )
-                }
-                cancelText="Cancel"
-                confirmVariant="primary"
-                maxWidth="4xl"
+                message=""
+                maxWidth="7xl"
                 body={
-                    refineSections.length > 0 && (
-                        <div className="flex flex-col max-h-[calc(100vh-12rem)] sm:max-h-[calc(100vh-10rem)]">
-                            {/* Scrollable Content Area */}
-                            <div className="flex-1 overflow-y-auto pr-2 -mr-2 space-y-6">
-                                {refineSubmitError && (
-                                    <div className="rounded-lg border border-red-200 bg-red-50 px-3 sm:px-4 py-2 sm:py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-                                        {refineSubmitError}
-                                    </div>
-                                )}
+                    savedAnalysisId && analysisResult ? (
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 -mx-4 -mt-4">
+                            {/* Left Side - Analysis Preview */}
+                            <div className="lg:border-r border-zinc-200 dark:border-zinc-800 pr-6">
+                                <div className="sticky top-0 max-h-[calc(100vh-12rem)] overflow-y-auto">
+                                    <div className="p-4">
+                                        <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+                                            Current Analysis Preview
+                                        </h3>
 
-                                {/* Progress Indicator */}
-                                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 text-sm">
-                                    <span className="text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm">
-                                        Section {refineSectionIndex + 1} of {refineSections.length}
-                                    </span>
-                                    <div className="flex gap-1 w-full sm:w-auto">
-                                        {refineSections.map((_, index) => (
-                                            <div
-                                                key={index}
-                                                className={`h-1.5 rounded-full transition-all flex-1 sm:flex-none ${index <= refineSectionIndex
-                                                    ? 'bg-[var(--primary)] dark:bg-[var(--accent)] sm:w-8'
-                                                    : 'bg-zinc-200 dark:bg-zinc-800 sm:w-1.5'
-                                                    }`}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Section Content */}
-                                <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={refineSectionIndex}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={{ duration: 0.3 }}
-                                        className="min-h-[300px] sm:min-h-[400px]"
-                                    >
-                                        <div className="mb-4 sm:mb-6">
-                                            <h3 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-2">
-                                                {refineSections[refineSectionIndex].title}
-                                            </h3>
-                                            <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                                                {refineSections[refineSectionIndex].content}
+                                        {/* Service Type */}
+                                        {analysisResult.preview?.service_type && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Service Type
+                                                </p>
+                                                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                    {analysisResult.preview.service_type}
+                                                </p>
+                                                {analysisResult.preview?.service_confidence && (
+                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                        Confidence: {analysisResult.preview.service_confidence}
+                                                    </p>
+                                                )}
+                                                {analysisResult.preview?.service_reasoning && (
+                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-2 leading-relaxed">
+                                                        {analysisResult.preview.service_reasoning}
+                                                    </p>
+                                                )}
                                             </div>
-                                        </div>
+                                        )}
 
-                                        {/* Satisfaction Toggle */}
-                                        <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-200 dark:border-zinc-800">
-                                            <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-3 sm:mb-4">
-                                                Are you satisfied with this section?
-                                            </label>
-                                            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
-                                                <button
-                                                    onClick={() => handleRefineSatisfaction(refineSections[refineSectionIndex].id, true)}
-                                                    className={`flex-1 px-4 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${refineFeedback[refineSections[refineSectionIndex].id]?.satisfied === true
-                                                        ? 'bg-[var(--primary)] text-white border-2 border-[var(--primary)]'
-                                                        : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                                                        }`}
-                                                >
-                                                    Yes
-                                                </button>
-                                                <button
-                                                    onClick={() => handleRefineSatisfaction(refineSections[refineSectionIndex].id, false)}
-                                                    className={`flex-1 px-4 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${refineFeedback[refineSections[refineSectionIndex].id]?.satisfied === false
-                                                        ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border-2 border-red-300 dark:border-red-700'
-                                                        : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                                                        }`}
-                                                >
-                                                    No
-                                                </button>
+                                        {/* Primary Outcome */}
+                                        {analysisResult.preview?.primary_outcome && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Primary Outcome
+                                                </p>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                    {analysisResult.preview.primary_outcome}
+                                                </p>
                                             </div>
+                                        )}
 
-                                            {/* Feedback Input (shown when not satisfied) */}
-                                            {refineFeedback[refineSections[refineSectionIndex].id]?.satisfied === false && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <label className="block text-sm font-medium text-zinc-900 dark:text-zinc-100 mb-2">
-                                                        What would you like to change or improve?
-                                                    </label>
-                                                    <textarea
-                                                        value={refineFeedback[refineSections[refineSectionIndex].id]?.feedback || ''}
-                                                        onChange={(e) => handleRefineFeedbackChange(refineSections[refineSectionIndex].id, e.target.value)}
-                                                        placeholder="Describe your suggestions or improvements..."
-                                                        rows={4}
-                                                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 focus:border-[var(--primary)] transition-all resize-none"
-                                                    />
-                                                </motion.div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                </AnimatePresence>
+                                        {/* Summary - Company Stage */}
+                                        {summary?.company_stage && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Company Stage
+                                                </p>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                                                    {summary.company_stage}
+                                                </p>
+                                            </div>
+                                        )}
 
-                                {/* Internal Navigation - Part of scrollable content */}
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 pt-4 border-t border-zinc-200 dark:border-zinc-800 pb-2">
-                                    <button
-                                        onClick={() => handleRefineSectionChange('prev')}
-                                        disabled={refineSectionIndex === 0}
-                                        className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-all ${refineSectionIndex === 0
-                                            ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
-                                            : 'bg-white dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
-                                            }`}
-                                    >
-                                        <div className="flex items-center justify-center gap-2">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                                            </svg>
-                                            <span>Previous</span>
-                                        </div>
-                                    </button>
-                                    <button
-                                        onClick={() => handleRefineSectionChange('next')}
-                                        disabled={refineSectionIndex === refineSections.length - 1}
-                                        className={`px-4 py-2.5 sm:py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2
-                                        ${refineSectionIndex === refineSections.length - 1
-                                                ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 cursor-not-allowed'
-                                                : 'bg-[var(--primary)] text-white hover:brightness-110'}
-                                        `}
-                                    >
-                                        <span>Next</span>
-                                        <svg
-                                            className="w-4 h-4"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth={2}
-                                                d="M9 5l7 7-7 7"
-                                            />
-                                        </svg>
-                                    </button>
+                                        {/* Summary - 90-Day Outcome */}
+                                        {summary?.outcome_90d && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    90-Day Outcome
+                                                </p>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                    {summary.outcome_90d}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Summary - Primary Bottleneck */}
+                                        {summary?.primary_bottleneck && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Primary Bottleneck
+                                                </p>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                    {summary.primary_bottleneck}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Summary - Workflow Analysis */}
+                                        {summary?.workflow_analysis && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Workflow Analysis
+                                                </p>
+                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                    {summary.workflow_analysis}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Role Title */}
+                                        {primaryRole?.title && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Role Title
+                                                </p>
+                                                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                    {primaryRole.title}
+                                                </p>
+                                                {primaryRole.hours_per_week && (
+                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                        {primaryRole.hours_per_week} hrs/week
+                                                    </p>
+                                                )}
+                                                {primaryRole.family && (
+                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                        {primaryRole.family}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Core Outcomes */}
+                                        {primaryRole?.core_outcomes && primaryRole.core_outcomes.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    90-Day Outcomes
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {primaryRole.core_outcomes.map((outcome: string, idx: number) => (
+                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                            <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
+                                                            <span className="flex-1">{outcome}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Responsibilities */}
+                                        {primaryRole?.responsibilities && primaryRole.responsibilities.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Key Responsibilities
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {primaryRole.responsibilities.map((resp: string, idx: number) => (
+                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                            <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
+                                                            <span className="flex-1 line-clamp-2">{resp}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Skills */}
+                                        {primaryRole?.skills && primaryRole.skills.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Skills Required
+                                                </p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {primaryRole.skills.map((skill: string, idx: number) => (
+                                                        <span key={idx} className="px-2 py-0.5 bg-[var(--primary)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] text-xs rounded border border-[var(--primary)]/20 dark:border-[var(--accent)]/30">
+                                                            {skill}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Tools */}
+                                        {primaryRole?.tools && primaryRole.tools.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Tools Required
+                                                </p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {primaryRole.tools.map((tool: string, idx: number) => (
+                                                        <span key={idx} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded">
+                                                            {tool}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* KPIs */}
+                                        {primaryRole?.kpis && primaryRole.kpis.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Key Performance Indicators
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {primaryRole.kpis.map((kpi: string, idx: number) => (
+                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                            <span className="text-green-500 mt-0.5">•</span>
+                                                            <span className="flex-1">{kpi}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Key Risks */}
+                                        {analysisResult.preview?.key_risks && analysisResult.preview.key_risks.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Key Risks
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {analysisResult.preview.key_risks.map((risk: string, idx: number) => (
+                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                            <span className="text-red-500 mt-0.5">•</span>
+                                                            <span className="flex-1">{risk}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Critical Questions */}
+                                        {analysisResult.preview?.critical_questions && analysisResult.preview.critical_questions.length > 0 && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                    Critical Questions
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {analysisResult.preview.critical_questions.map((question: string, idx: number) => (
+                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                            <span className="text-amber-500 mt-0.5">•</span>
+                                                            <span className="flex-1">{question}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
+                                        {/* Confidence */}
+                                        {analysisResult.preview?.confidence && (
+                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                    Overall Confidence
+                                                </p>
+                                                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                    {analysisResult.preview.confidence}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* Right Side - Refinement Form */}
+                            <div className="pl-0 lg:pl-2">
+                                <RefinementForm
+                                    analysisId={savedAnalysisId}
+                                    userId={user.id}
+                                    onRefinementComplete={handleRefinementComplete}
+                                />
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="p-6 text-center">
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">
+                                Please save your analysis first before refining it.
+                            </p>
+                            <button
+                                onClick={async () => {
+                                    const id = await handleSave(false);
+                                    if (id) {
+                                        setSavedAnalysisId(id);
+                                    }
+                                }}
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition"
+                            >
+                                Save Analysis
+                            </button>
                         </div>
                     )
                 }
+                cancelText="Close"
+                onConfirm={() => { }}
+                confirmText=""
             />
 
             {/* Download Modal */}
@@ -1593,9 +2278,7 @@ export default function DashboardClient({ user }: { user: User }) {
                 cancelText="Close"
                 confirmVariant={saveResult?.success ? "primary" : "danger"}
             />
-
-
-
         </div>
+
     );
 }
