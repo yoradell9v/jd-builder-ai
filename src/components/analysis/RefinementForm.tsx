@@ -4,12 +4,14 @@ import { AlertCircle, CheckCircle2, Loader2, MessageCircle, AlertTriangle } from
 interface RefinementFormProps {
     analysisId: string;
     userId: string;
+    serviceType?: string;
     onRefinementComplete: (refinedPackage: any) => void;
 }
 
 const RefinementForm: React.FC<RefinementFormProps> = ({
     analysisId,
     userId,
+    serviceType,
     onRefinementComplete,
 }) => {
     const [feedback, setFeedback] = useState('');
@@ -20,17 +22,63 @@ const RefinementForm: React.FC<RefinementFormProps> = ({
     const [clarificationQuestions, setClarificationQuestions] = useState<any[]>([]);
     const [changesSummary, setChangesSummary] = useState<any[]>([]);
 
-    const availableAreas = [
-        { value: 'service_type', label: 'Service Type' },
-        { value: 'role_title', label: 'Role Title' },
-        { value: 'responsibilities', label: 'Responsibilities' },
-        { value: 'kpis', label: 'KPIs' },
-        { value: 'hours', label: 'Weekly Hours' },
-        { value: 'tools', label: 'Tools Required' },
-        { value: 'timeline', label: 'Timeline & Onboarding' },
-        { value: 'team_support', label: 'Team Support Areas' },
-        { value: 'outcomes', label: '90-Day Outcomes' },
-    ];
+    // Service-type-specific refinement areas
+    const getAvailableAreas = () => {
+        const commonAreas = [
+            { value: 'service_type', label: 'Service Type' },
+        ];
+
+        if (serviceType === "Dedicated VA") {
+            return [
+                ...commonAreas,
+                { value: 'role_title', label: 'Role Title' },
+                { value: 'responsibilities', label: 'Responsibilities' },
+                { value: 'kpis', label: 'KPIs' },
+                { value: 'hours', label: 'Weekly Hours' },
+                { value: 'tools', label: 'Tools Required' },
+                { value: 'timeline', label: 'Timeline & Onboarding' },
+                { value: 'outcomes', label: '90-Day Outcomes' },
+                { value: 'skills', label: 'Skills Required' },
+            ];
+        } else if (serviceType === "Unicorn VA Service") {
+            return [
+                ...commonAreas,
+                { value: 'role_title', label: 'Core VA Role Title' },
+                { value: 'responsibilities', label: 'Core Responsibilities' },
+                { value: 'kpis', label: 'KPIs' },
+                { value: 'hours', label: 'Weekly Hours' },
+                { value: 'tools', label: 'Tools Required' },
+                { value: 'timeline', label: 'Timeline & Onboarding' },
+                { value: 'team_support', label: 'Team Support Areas' },
+                { value: 'outcomes', label: '90-Day Outcomes' },
+                { value: 'skills', label: 'Skills Required' },
+            ];
+        } else if (serviceType === "Projects on Demand") {
+            return [
+                ...commonAreas,
+                { value: 'projects', label: 'Projects' },
+                { value: 'project_deliverables', label: 'Project Deliverables' },
+                { value: 'project_timeline', label: 'Project Timeline' },
+                { value: 'project_scope', label: 'Project Scope' },
+                { value: 'project_skills', label: 'Required Skills' },
+                { value: 'total_hours', label: 'Total Hours' },
+                { value: 'project_sequence', label: 'Project Sequence' },
+            ];
+        }
+
+        // Default fallback
+        return [
+            ...commonAreas,
+            { value: 'role_title', label: 'Role/Project Title' },
+            { value: 'responsibilities', label: 'Responsibilities' },
+            { value: 'kpis', label: 'KPIs' },
+            { value: 'hours', label: 'Hours' },
+            { value: 'tools', label: 'Tools Required' },
+            { value: 'timeline', label: 'Timeline' },
+        ];
+    };
+
+    const availableAreas = getAvailableAreas();
 
 
     const toggleArea = (area: string) => {
@@ -135,12 +183,20 @@ const RefinementForm: React.FC<RefinementFormProps> = ({
                     <textarea
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
-                        placeholder="Example: The weekly hours seem too low for the responsibilities listed. I think we need at least 35 hours per week, and the KPIs should include social media engagement metrics."
+                        placeholder={
+                            serviceType === "Projects on Demand"
+                                ? "Example: The timeline for Project 1 seems too aggressive. We need 4-5 weeks instead of 3 weeks, and the deliverables should include user testing documentation."
+                                : serviceType === "Unicorn VA Service"
+                                    ? "Example: The weekly hours seem too low for the responsibilities listed. I think we need at least 35 hours per week, and we should add graphic design to the team support areas."
+                                    : "Example: The weekly hours seem too low for the responsibilities listed. I think we need at least 35 hours per week, and the KPIs should include social media engagement metrics."
+                        }
                         className="w-full h-32 px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent resize-none"
                         disabled={isSubmitting}
                     />
                     <p className="mt-1 text-xs text-zinc-500">
-                        💡 Tip: Be specific! Instead of "change the role", say "The role title should emphasize content strategy, not just social media management."
+                        💡 Tip: Be specific! {serviceType === "Projects on Demand"
+                            ? "Instead of 'change the project', say 'Project 1 needs an additional deliverable for SEO audit documentation.'"
+                            : "Instead of 'change the role', say 'The role title should emphasize content strategy, not just social media management.'"}
                     </p>
                 </div>
 

@@ -47,7 +47,7 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         companyName: "",
         website: "",
         businessGoal: "More leads",
-        tasks: ["", "", "", ""],
+        tasks: ["", "", ""],
         outcome90Day: "",
         weeklyHours: "40",
         timezone: "",
@@ -168,6 +168,17 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         handleInputChange("tasks", updatedTasks);
     };
 
+    const handleAddTask = () => {
+        handleInputChange("tasks", [...formData.tasks, ""]);
+    };
+
+    const handleRemoveTask = (index: number) => {
+        if (formData.tasks.length > 3) {
+            const updatedTasks = formData.tasks.filter((_, i) => i !== index);
+            handleInputChange("tasks", updatedTasks);
+        }
+    };
+
     const handleRequirementChange = (index: number, value: string) => {
         const updatedRequirements = [...formData.requirements];
         updatedRequirements[index] = value;
@@ -176,6 +187,13 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
 
     const handleAddRequirement = () => {
         handleInputChange("requirements", [...formData.requirements, ""]);
+    };
+
+    const handleRemoveRequirement = (index: number) => {
+        if (formData.requirements.length > 3) {
+            const updatedRequirements = formData.requirements.filter((_, i) => i !== index);
+            handleInputChange("requirements", updatedRequirements);
+        }
     };
 
     const handleSOPFileChange = (file: File | null) => {
@@ -218,7 +236,7 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
             companyName: "",
             website: "",
             businessGoal: "More leads",
-            tasks: ["", "", "", ""],
+            tasks: ["", "", ""],
             outcome90Day: "",
             weeklyHours: "40",
             timezone: "",
@@ -596,37 +614,57 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                     <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">List the top 3 tasks or any additional tasks this role will handle</p>
                                     <div className={sectionClasses}>
                                         {formData.tasks.map((task, index) => (
-                                            <div key={index}>
-                                                <label className={labelClasses}>
-                                                    {index === 3 ? "Additional Tasks" : `Task ${index + 1}`}{" "}
-                                                    {index < 3 && <span className="text-red-500">*</span>}
-                                                </label>
-
-                                                {index === 3 ? (
-                                                    <textarea
-                                                        placeholder="e.g., Ongoing admin tasks, SOP updates, ad-hoc projects"
-                                                        value={task}
-                                                        onChange={(e) => handleTaskChange(index, e.target.value)}
-                                                        className={inputClasses}
-                                                        rows={4}
-                                                    />
-                                                ) : (
-                                                    <input
-                                                        type="text"
-                                                        placeholder={`e.g., ${index === 0
-                                                            ? "Manage social media content"
-                                                            : index === 1
-                                                                ? "Respond to customer inquiries"
-                                                                : "Create weekly reports"
-                                                            }`}
-                                                        value={task}
-                                                        onChange={(e) => handleTaskChange(index, e.target.value)}
-                                                        className={inputClasses}
-                                                        required={index < 3}
-                                                    />
-                                                )}
+                                            <div key={index} className="relative">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <label className={labelClasses + " mb-0"}>
+                                                        {index < 3 ? `Task ${index + 1}` : `Additional Task ${index - 2}`}{" "}
+                                                        {index < 3 && <span className="text-red-500">*</span>}
+                                                    </label>
+                                                    {index >= 3 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveTask(index)}
+                                                            className="p-1.5 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
+                                                            aria-label="Remove task"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    placeholder={`e.g., ${index === 0
+                                                        ? "Manage social media content"
+                                                        : index === 1
+                                                            ? "Respond to customer inquiries"
+                                                            : index === 2
+                                                                ? "Create weekly reports"
+                                                                : "Additional task description"
+                                                        }`}
+                                                    value={task}
+                                                    onChange={(e) => handleTaskChange(index, e.target.value)}
+                                                    className={inputClasses}
+                                                    required={index < 3}
+                                                />
                                             </div>
                                         ))}
+                                        <button
+                                            type="button"
+                                            onClick={handleAddTask}
+                                            className="
+                                                inline-flex items-center justify-center
+                                                rounded-lg border border-dashed border-[var(--accent)] 
+                                                dark:border-[var(--accent)]/70
+                                                px-4 py-2 text-sm font-medium text-[var(--primary)]
+                                                dark:text-[var(--accent)]
+                                                hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20
+                                                transition-colors
+                                            "
+                                        >
+                                            + Add Task
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -701,21 +739,34 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                     <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-4">Must-have skills and qualifications</p>
                                     <div className={sectionClasses}>
                                         {formData.requirements.map((req, index) => (
-                                            <div key={index}>
-                                                <label className={labelClasses}>
-                                                    Requirement {index + 1} {index < 3 && <span className="text-red-500">*</span>}
-                                                </label>
+                                            <div key={index} className="relative">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <label className={labelClasses + " mb-0"}>
+                                                        {index < 3 ? `Requirement ${index + 1}` : `Additional Requirement ${index - 2}`} {index < 3 && <span className="text-red-500">*</span>}
+                                                    </label>
+                                                    {index >= 3 && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemoveRequirement(index)}
+                                                            className="p-1.5 text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors rounded"
+                                                            aria-label="Remove requirement"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <input
                                                     type="text"
-                                                    placeholder={`${index > 2
-                                                        ? "Additional Requirement"
-                                                        : index === 0
-                                                            ? "e.g., 2+ years experience in social media"
-                                                            : index === 1
-                                                                ? "e.g., Proficient in Canva and Adobe Suite"
-                                                                : "e.g., Experience with CRM systems"
+                                                    placeholder={`${index === 0
+                                                        ? "e.g., 2+ years experience in social media"
+                                                        : index === 1
+                                                            ? "e.g., Proficient in Canva and Adobe Suite"
+                                                            : index === 2
+                                                                ? "e.g., Experience with CRM systems"
+                                                                : "Additional requirement"
                                                         }`}
-
                                                     value={req}
                                                     onChange={(e) => handleRequirementChange(index, e.target.value)}
                                                     className={inputClasses}
@@ -727,14 +778,14 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             type="button"
                                             onClick={handleAddRequirement}
                                             className="
-  inline-flex items-center justify-center
-  rounded-lg border border-dashed border-[var(--accent)] 
-  dark:border-[var(--accent)]/70
-  px-4 py-2 text-sm font-medium text-[var(--primary)]
-  dark:text-[var(--accent)]
-  hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20
-  transition-colors
-"
+                                                inline-flex items-center justify-center
+                                                rounded-lg border border-dashed border-[var(--accent)] 
+                                                dark:border-[var(--accent)]/70
+                                                px-4 py-2 text-sm font-medium text-[var(--primary)]
+                                                dark:text-[var(--accent)]
+                                                hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20
+                                                transition-colors
+                                            "
                                         >
                                             + Add Requirement
                                         </button>

@@ -34,23 +34,37 @@ interface AnalysisResult {
         confidence: string;
         key_risks: string[];
         critical_questions: string[];
-        core_va_title: string;
-        core_va_hours: string;
-        team_support_areas: number;
+        // Dedicated VA fields
+        role_title?: string;
+        hours_per_week?: number;
+        // Unicorn VA fields
+        core_va_title?: string;
+        core_va_hours?: string | number;
+        team_support_areas?: number;
+        // Projects on Demand fields
+        project_count?: number;
+        total_hours?: string | number;
+        estimated_timeline?: string;
     };
     full_package: {
         service_structure: {
             service_type: string;
-            core_va_role: {
+            // Dedicated VA
+            dedicated_va_role?: {
                 title: string;
                 craft_family?: string;
                 hours_per_week: string | number;
                 core_responsibility: string;
-                recurring_tasks: string[];
+                recurring_tasks?: string[];
+                task_allocation?: {
+                    from_intake?: string[];
+                    estimated_breakdown?: string;
+                };
                 skill_requirements: {
                     required: string[];
                     nice_to_have: string[];
-                }
+                    growth_areas?: string[];
+                };
                 workflow_ownership: string[];
                 interaction_model?: {
                     reports_to?: string;
@@ -59,14 +73,56 @@ interface AnalysisResult {
                     sync_needs?: string;
                     timezone_criticality?: string;
                 };
-            }
-            team_support_areas: any,
-            coordination_model: string;
-            pros: [];
-            cons: [];
-            scaling_path: []
-            alternative_structure: any
-            alternative_consideration: any
+            };
+            // Unicorn VA Service
+            core_va_role?: {
+                title: string;
+                craft_family?: string;
+                hours_per_week: string | number;
+                core_responsibility: string;
+                recurring_tasks: string[];
+                skill_requirements: {
+                    required: string[];
+                    nice_to_have: string[];
+                };
+                workflow_ownership: string[];
+                interaction_model?: {
+                    reports_to?: string;
+                    collaborates_with?: string[];
+                    client_facing?: boolean;
+                    sync_needs?: string;
+                    timezone_criticality?: string;
+                };
+            };
+            team_support_areas?: any;
+            coordination_model?: string;
+            // Projects on Demand
+            projects?: Array<{
+                project_name: string;
+                category?: string;
+                objective: string;
+                deliverables: string[] | Array<{
+                    item: string;
+                    description?: string;
+                    acceptance_criteria?: string[];
+                    file_format?: string;
+                }>;
+                estimated_hours: string | number;
+                timeline: string;
+                skills_required: string[];
+                dependencies?: string[];
+                success_criteria?: string;
+            }>;
+            recommended_sequence?: string;
+            total_investment?: {
+                hours: string | number;
+                timeline: string;
+            };
+            pros: string[];
+            cons: string[];
+            scaling_path: string;
+            alternative_structure?: any;
+            alternative_consideration?: any;
         }
         executive_summary: {
             what_you_told_us: {
@@ -91,7 +147,27 @@ interface AnalysisResult {
             key_insights: string[];
         };
         detailed_specifications: {
-            core_va_jd: {
+            // Dedicated VA - flat structure
+            title?: string;
+            hours_per_week?: string | number;
+            mission_statement?: string;
+            primary_outcome?: string;
+            core_outcomes?: string[];
+            responsibilities?: any[];
+            skills_required?: {
+                technical: any[];
+                soft: any[];
+                domain: string[];
+            };
+            tools?: any[];
+            kpis?: any[];
+            personality_fit?: any[];
+            sample_week?: any;
+            communication_structure?: any;
+            timezone_requirements?: any;
+            success_indicators?: any;
+            // Unicorn VA Service
+            core_va_jd?: {
                 title: string;
                 hours_per_week: string;
                 mission_statement: string;
@@ -102,16 +178,52 @@ interface AnalysisResult {
                     technical: string[];
                     soft: string[];
                     domain: string[];
-                }
+                };
                 tools: any[];
                 kpis: any[];
-                personality_fit: any[]
+                personality_fit: any[];
                 sample_week: any;
                 communication_structure: any;
                 timezone_requirements?: any;
-                success_indicators: any
-            }
-            team_support_specs: any;
+                success_indicators: any;
+            };
+            team_support_specs?: any;
+            // Projects on Demand
+            projects?: Array<{
+                project_name: string;
+                overview?: string;
+                objectives?: string[];
+                deliverables: Array<{
+                    item: string;
+                    description?: string;
+                    acceptance_criteria?: string[];
+                    file_format?: string;
+                }>;
+                scope?: {
+                    in_scope?: string[];
+                    out_of_scope?: string[];
+                    assumptions?: string[];
+                };
+                timeline?: {
+                    estimated_hours: string | number;
+                    duration: string;
+                    milestones?: Array<{
+                        milestone: string;
+                        timing: string;
+                        deliverable: string;
+                    }>;
+                };
+                requirements?: {
+                    from_client?: string[];
+                    skills_needed?: string[];
+                    tools_needed?: string[];
+                };
+                success_metrics?: string[];
+                risks?: Array<{
+                    risk: string;
+                    mitigation: string;
+                }>;
+            }>;
         };
         role_architecture: {
             recommended_structure: {
@@ -398,8 +510,59 @@ export default function DashboardClient({ user }: { user: User }) {
         const pkg = result.full_package;
         const serviceType = result.preview?.service_type;
 
-        // For Dedicated VA or Unicorn VA Service, get core VA role
-        if (serviceType === "Dedicated VA" || serviceType === "Unicorn VA Service") {
+        // For Dedicated VA
+        if (serviceType === "Dedicated VA") {
+            const coreRole = pkg.service_structure?.dedicated_va_role;
+            const detailedJd = pkg.detailed_specifications;
+
+            if (coreRole || detailedJd) {
+                // Extract responsibilities from detailed JD
+                const responsibilities: string[] = [];
+                if (detailedJd?.responsibilities) {
+                    detailedJd.responsibilities.forEach((cat: any) => {
+                        if (cat?.details && Array.isArray(cat.details)) {
+                            cat.details.forEach((d: string) => responsibilities.push(String(d)));
+                        } else if (typeof cat === "string") {
+                            responsibilities.push(cat);
+                        }
+                    });
+                }
+
+                return {
+                    title: coreRole?.title || detailedJd?.title || result.preview?.role_title || "",
+                    family: coreRole?.craft_family || "",
+                    service: serviceType,
+                    hours_per_week: typeof (coreRole?.hours_per_week) === "string"
+                        ? parseInt(coreRole.hours_per_week) || 0
+                        : coreRole?.hours_per_week || detailedJd?.hours_per_week || result.preview?.hours_per_week || 0,
+                    client_facing: coreRole?.interaction_model?.client_facing || false,
+                    purpose: detailedJd?.mission_statement || coreRole?.core_responsibility || "",
+                    core_outcomes: detailedJd?.core_outcomes || [],
+                    responsibilities: responsibilities.length > 0 ? responsibilities : (coreRole?.recurring_tasks || []),
+                    skills: [
+                        ...(coreRole?.skill_requirements?.required || []),
+                        ...(coreRole?.skill_requirements?.nice_to_have || [])
+                    ],
+                    tools: detailedJd?.tools?.map((t: any) =>
+                        typeof t === "string" ? t : t.tool || ""
+                    ) || [],
+                    kpis: detailedJd?.kpis?.map((k: any) =>
+                        typeof k === "string" ? k : `${k.metric || ""}${k.target ? ` — ${k.target}` : ""}`
+                    ) || [],
+                    personality: detailedJd?.personality_fit?.map((p: any) =>
+                        typeof p === "string" ? p : p.trait || ""
+                    ) || [],
+                    reporting_to: coreRole?.interaction_model?.reports_to || detailedJd?.communication_structure?.reporting_to || "",
+                    sample_week: detailedJd?.sample_week || {},
+                    overlap_requirements: coreRole?.interaction_model?.timezone_criticality || detailedJd?.timezone_requirements?.overlap_needed || "",
+                    communication_norms: coreRole?.interaction_model?.sync_needs || (detailedJd?.communication_structure ? JSON.stringify(detailedJd.communication_structure) : "") || "",
+                    percentage_of_outcome: 100,
+                };
+            }
+        }
+
+        // For Unicorn VA Service
+        if (serviceType === "Unicorn VA Service") {
             const coreRole = pkg.service_structure?.core_va_role;
             const detailedJd = pkg.detailed_specifications?.core_va_jd;
 
@@ -449,6 +612,7 @@ export default function DashboardClient({ user }: { user: User }) {
             }
         }
 
+        // For Projects on Demand, return null (no single role)
         return null;
     };
 
@@ -589,28 +753,15 @@ export default function DashboardClient({ user }: { user: User }) {
         setIsDownloading(true);
         console.log("Starting download of analysis as PDF:", analysisResult);
         try {
-            const primaryRole = analysisResult?.ai_analysis?.roles?.[0];
-            
             const response = await fetch('/api/jd/download', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    preview: {
-                        summary: analysisResult.ai_analysis.what_you_told_us || analysisResult.preview.summary,
-                        primary_outcome: intakeData.outcome90Day,
-                        recommended_role: primaryRole?.title || '',
-                        role_purpose: primaryRole?.purpose || '',
-                        service_mapping: primaryRole?.service || '',
-                        weekly_hours: primaryRole?.hours_per_week || 0,
-                        client_facing: primaryRole?.client_facing ?? false,
-                        core_outcomes: primaryRole?.core_outcomes || [],
-                        kpis: primaryRole?.kpis || [],
-                        key_tools: primaryRole?.tools?.slice(0, 5) || [],
-                        risks: analysisResult.ai_analysis.risks || [],
-                    },
-                    ai_analysis: analysisResult.ai_analysis,
+                    preview: analysisResult.preview,
+                    full_package: analysisResult.full_package,
+                    metadata: analysisResult.metadata,
                 }),
             });
 
@@ -1160,8 +1311,51 @@ export default function DashboardClient({ user }: { user: User }) {
                                                         </div>
                                                     )}
 
-                                                    {/* Core VA Role */}
-                                                    {analysisResult.preview.core_va_title && (
+                                                    {/* Role/Project Information - Service Type Specific */}
+                                                    {analysisResult.preview.service_type === "Dedicated VA" && analysisResult.preview.role_title && (
+                                                        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-5 bg-white dark:bg-zinc-900">
+                                                            {/* Header */}
+                                                            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+                                                                Role
+                                                            </p>
+
+                                                            {/* Job Title with Icon */}
+                                                            <div className="flex items-center gap-2 mb-4">
+                                                                <Briefcase className="w-5 h-5 text-[var(--accent)]" />
+                                                                <p className="text-xl font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                    {analysisResult.preview.role_title}
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Details */}
+                                                            <div className="space-y-3">
+                                                                {analysisResult.preview.hours_per_week && (
+                                                                    <div>
+                                                                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                                                            Hours per Week:
+                                                                        </span>
+                                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 ml-2">
+                                                                            {analysisResult.preview.hours_per_week}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {analysisResult.preview.primary_outcome && (
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                            Primary Outcome
+                                                                        </p>
+                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                            {analysisResult.preview.primary_outcome}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Unicorn VA Service */}
+                                                    {analysisResult.preview.service_type === "Unicorn VA Service" && analysisResult.preview.core_va_title && (
                                                         <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-5 bg-white dark:bg-zinc-900">
                                                             {/* Header */}
                                                             <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
@@ -1214,6 +1408,60 @@ export default function DashboardClient({ user }: { user: User }) {
                                                         </div>
                                                     )}
 
+                                                    {/* Projects on Demand */}
+                                                    {analysisResult.preview.service_type === "Projects on Demand" && (
+                                                        <div className="border border-zinc-200 dark:border-zinc-700 rounded-lg p-5 bg-white dark:bg-zinc-900">
+                                                            {/* Header */}
+                                                            <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-3">
+                                                                Project Overview
+                                                            </p>
+
+                                                            {/* Project Count with Icon */}
+                                                            <div className="flex items-center gap-2 mb-4">
+                                                                <Briefcase className="w-5 h-5 text-[var(--accent)]" />
+                                                                <p className="text-xl font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                    {analysisResult.preview.project_count || 0} Projects
+                                                                </p>
+                                                            </div>
+
+                                                            {/* Details */}
+                                                            <div className="space-y-3">
+                                                                {analysisResult.preview.total_hours && (
+                                                                    <div>
+                                                                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                                                            Total Hours:
+                                                                        </span>
+                                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 ml-2">
+                                                                            {analysisResult.preview.total_hours}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {analysisResult.preview.estimated_timeline && (
+                                                                    <div>
+                                                                        <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase">
+                                                                            Estimated Timeline:
+                                                                        </span>
+                                                                        <span className="text-sm text-zinc-700 dark:text-zinc-300 ml-2">
+                                                                            {analysisResult.preview.estimated_timeline}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {analysisResult.preview.primary_outcome && (
+                                                                    <div>
+                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                            Primary Outcome
+                                                                        </p>
+                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                            {analysisResult.preview.primary_outcome}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
 
                                                 </motion.div>
                                             )}
@@ -1229,8 +1477,425 @@ export default function DashboardClient({ user }: { user: User }) {
                                                     {analysisResult.full_package?.service_structure && (
                                                         <div className="space-y-4">
 
-                                                            {/* Core VA Role */}
-                                                            {analysisResult.full_package.service_structure.core_va_role && (
+                                                            {/* Dedicated VA Role */}
+                                                            {analysisResult.preview.service_type === "Dedicated VA" && analysisResult.full_package.service_structure.dedicated_va_role && (
+                                                                <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                    <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <div className="flex-1">
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide mb-2">
+                                                                                    Dedicated VA Role
+                                                                                </p>
+                                                                                <div className="flex items-center gap-2 mb-2">
+                                                                                    <Briefcase className="w-5 h-5 text-[var(--accent)]" />
+                                                                                    <h4 className="text-lg font-bold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        {analysisResult.full_package.service_structure.dedicated_va_role.title}
+                                                                                    </h4>
+                                                                                </div>
+                                                                                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.hours_per_week} hrs/week
+                                                                                </p>
+                                                                            </div>
+                                                                            <svg
+                                                                                className="w-5 h-5 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                fill="none"
+                                                                                stroke="currentColor"
+                                                                                viewBox="0 0 24 24"
+                                                                            >
+                                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                            </svg>
+                                                                        </div>
+                                                                    </summary>
+
+                                                                    <div className="p-4 space-y-4 bg-white dark:bg-zinc-900">
+                                                                        {/* Core Responsibility */}
+                                                                        {analysisResult.full_package.service_structure.dedicated_va_role.core_responsibility && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Core Responsibility
+                                                                                </p>
+                                                                                <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.core_responsibility}
+                                                                                </p>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Task Allocation */}
+                                                                        {analysisResult.full_package.service_structure.dedicated_va_role.task_allocation?.from_intake && analysisResult.full_package.service_structure.dedicated_va_role.task_allocation.from_intake.length > 0 && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Tasks
+                                                                                </p>
+                                                                                <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.task_allocation?.from_intake?.map((task: string, i: number) => (
+                                                                                        <li key={i}>{task}</li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Skill Requirements */}
+                                                                        {analysisResult.full_package.service_structure.dedicated_va_role.skill_requirements && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Skill Requirements
+                                                                                </p>
+                                                                                <div className="space-y-3">
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.skill_requirements.required?.length > 0 && (
+                                                                                        <div>
+                                                                                            <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                Required
+                                                                                            </p>
+                                                                                            <div className="flex flex-wrap gap-2">
+                                                                                                {analysisResult.full_package.service_structure.dedicated_va_role.skill_requirements.required.map((skill: string, i: number) => (
+                                                                                                    <span key={i} className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-md">
+                                                                                                        {skill}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.skill_requirements.nice_to_have?.length > 0 && (
+                                                                                        <div>
+                                                                                            <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                Nice to Have
+                                                                                            </p>
+                                                                                            <div className="flex flex-wrap gap-2">
+                                                                                                {analysisResult.full_package.service_structure.dedicated_va_role.skill_requirements.nice_to_have.map((skill: string, i: number) => (
+                                                                                                    <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-md">
+                                                                                                        {skill}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Workflow Ownership */}
+                                                                        {analysisResult.full_package.service_structure.dedicated_va_role.workflow_ownership?.length > 0 && (
+                                                                            <div>
+                                                                                <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                    Workflow Ownership
+                                                                                </p>
+                                                                                <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                    {analysisResult.full_package.service_structure.dedicated_va_role.workflow_ownership.map((workflow: string, i: number) => (
+                                                                                        <li key={i}>{workflow}</li>
+                                                                                    ))}
+                                                                                </ul>
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </details>
+                                                            )}
+
+                                                            {/* Detailed JD for Dedicated VA */}
+                                                            {analysisResult.preview.service_type === "Dedicated VA" && analysisResult.full_package.detailed_specifications && (
+                                                                <div className="space-y-4 mt-4">
+                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                                                                        Detailed Job Description
+                                                                    </p>
+                                                                    <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                        <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                                                            <div className="flex items-center justify-between">
+                                                                                <div>
+                                                                                    <h4 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                        {analysisResult.full_package.detailed_specifications.title || "Full Job Description"}
+                                                                                    </h4>
+                                                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                                                        Mission, Outcomes, Responsibilities, Skills, KPIs & More
+                                                                                    </p>
+                                                                                </div>
+                                                                                <svg
+                                                                                    className="w-5 h-5 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                    fill="none"
+                                                                                    stroke="currentColor"
+                                                                                    viewBox="0 0 24 24"
+                                                                                >
+                                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                </svg>
+                                                                            </div>
+                                                                        </summary>
+
+                                                                        <div className="p-4 space-y-4 bg-white dark:bg-zinc-900">
+                                                                            {/* Mission Statement */}
+                                                                            {analysisResult.full_package.detailed_specifications.mission_statement && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Mission Statement
+                                                                                    </p>
+                                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                        {analysisResult.full_package.detailed_specifications.mission_statement}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Primary Outcome */}
+                                                                            {analysisResult.full_package.detailed_specifications.primary_outcome && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Primary Outcome (90 Days)
+                                                                                    </p>
+                                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                        {analysisResult.full_package.detailed_specifications.primary_outcome}
+                                                                                    </p>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Core Outcomes */}
+                                                                            {analysisResult.full_package.detailed_specifications.core_outcomes && analysisResult.full_package.detailed_specifications.core_outcomes.length > 0 && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Core Outcomes
+                                                                                    </p>
+                                                                                    <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                        {analysisResult.full_package.detailed_specifications.core_outcomes.map((outcome: string, i: number) => (
+                                                                                            <li key={i}>{outcome}</li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Responsibilities */}
+                                                                            {analysisResult.full_package.detailed_specifications.responsibilities && analysisResult.full_package.detailed_specifications.responsibilities.length > 0 && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Responsibilities
+                                                                                    </p>
+                                                                                    <div className="space-y-3">
+                                                                                        {analysisResult.full_package.detailed_specifications.responsibilities.map((resp: any, i: number) => (
+                                                                                            <div key={i} className="border-l-2 border-zinc-200 dark:border-zinc-700 pl-3">
+                                                                                                {typeof resp === "object" && resp.category && (
+                                                                                                    <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                        {resp.category}
+                                                                                                    </p>
+                                                                                                )}
+                                                                                                {typeof resp === "object" && resp.details ? (
+                                                                                                    <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                                        {resp.details.map((detail: string, j: number) => (
+                                                                                                            <li key={j}>{detail}</li>
+                                                                                                        ))}
+                                                                                                    </ul>
+                                                                                                ) : (
+                                                                                                    <p className="text-sm text-zinc-700 dark:text-zinc-300">{typeof resp === "string" ? resp : JSON.stringify(resp)}</p>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Skills Required */}
+                                                                            {analysisResult.full_package.detailed_specifications.skills_required && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Skills Required
+                                                                                    </p>
+                                                                                    <div className="space-y-3">
+                                                                                        {analysisResult.full_package.detailed_specifications.skills_required.technical?.length > 0 && (
+                                                                                            <div>
+                                                                                                <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                    Technical
+                                                                                                </p>
+                                                                                                <div className="flex flex-wrap gap-2">
+                                                                                                    {analysisResult.full_package.detailed_specifications.skills_required.technical.map((skill: any, i: number) => (
+                                                                                                        <span key={i} className="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-md">
+                                                                                                            {typeof skill === "string" ? skill : skill.skill || ""}
+                                                                                                        </span>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        {analysisResult.full_package.detailed_specifications.skills_required.soft?.length > 0 && (
+                                                                                            <div>
+                                                                                                <p className="text-sm font-medium text-[var(--primary)] dark:text-[var(--accent)] mb-1">
+                                                                                                    Soft Skills
+                                                                                                </p>
+                                                                                                <div className="flex flex-wrap gap-2">
+                                                                                                    {analysisResult.full_package.detailed_specifications.skills_required.soft.map((skill: any, i: number) => (
+                                                                                                        <span key={i} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-md">
+                                                                                                            {typeof skill === "string" ? skill : skill.skill || ""}
+                                                                                                        </span>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* KPIs */}
+                                                                            {analysisResult.full_package.detailed_specifications.kpis && analysisResult.full_package.detailed_specifications.kpis.length > 0 && (
+                                                                                <div>
+                                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                                                        Key Performance Indicators
+                                                                                    </p>
+                                                                                    <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                        {(analysisResult.full_package.detailed_specifications.kpis || []).map((kpi: any, i: number) => (
+                                                                                            <li key={i}>
+                                                                                                {typeof kpi === "string" ? kpi : `${kpi.metric || ""}${kpi.target ? ` — ${kpi.target}` : ""}`}
+                                                                                            </li>
+                                                                                        ))}
+                                                                                    </ul>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </details>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Projects on Demand */}
+                                                            {analysisResult.preview.service_type === "Projects on Demand" && (
+                                                                <div className="space-y-4">
+                                                                    <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                                                                        Projects
+                                                                    </p>
+                                                                    {(analysisResult.full_package.detailed_specifications?.projects || analysisResult.full_package.service_structure.projects || []).map((project: any, idx: number) => (
+                                                                        <details key={idx} className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
+                                                                            <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
+                                                                                <div className="flex items-center justify-between">
+                                                                                    <div className="flex-1">
+                                                                                        <h5 className="text-base font-semibold text-[var(--primary)] dark:text-[var(--accent)]">
+                                                                                            {project.project_name}
+                                                                                        </h5>
+                                                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                                                            {project.estimated_hours || project.timeline?.estimated_hours} hrs • {typeof project.timeline === "string" ? project.timeline : project.timeline?.duration || "N/A"}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                    <svg
+                                                                                        className="w-5 h-5 text-zinc-400 transition-transform group-open:rotate-180"
+                                                                                        fill="none"
+                                                                                        stroke="currentColor"
+                                                                                        viewBox="0 0 24 24"
+                                                                                    >
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                                    </svg>
+                                                                                </div>
+                                                                            </summary>
+
+                                                                            <div className="p-4 space-y-3 bg-white dark:bg-zinc-900">
+                                                                                {/* Overview */}
+                                                                                {project.overview && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Overview
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                            {project.overview}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Objective */}
+                                                                                {project.objective && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Objective
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                            {project.objective}
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Objectives (plural) */}
+                                                                                {project.objectives?.length > 0 && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Objectives
+                                                                                        </p>
+                                                                                        <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                            {project.objectives.map((obj: string, i: number) => (
+                                                                                                <li key={i}>{obj}</li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Deliverables */}
+                                                                                {project.deliverables?.length > 0 && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Deliverables
+                                                                                        </p>
+                                                                                        <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                            {project.deliverables.map((del: any, i: number) => (
+                                                                                                <li key={i}>
+                                                                                                    {typeof del === "string" ? del : del.item || del}
+                                                                                                    {typeof del === "object" && del.description && (
+                                                                                                        <span className="text-zinc-500 dark:text-zinc-400"> - {del.description}</span>
+                                                                                                    )}
+                                                                                                </li>
+                                                                                            ))}
+                                                                                        </ul>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Timeline */}
+                                                                                {project.timeline && typeof project.timeline === "object" && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Timeline
+                                                                                        </p>
+                                                                                        <p className="text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                            {project.timeline.estimated_hours} hrs • {project.timeline.duration}
+                                                                                        </p>
+                                                                                        {project.timeline.milestones?.length > 0 && (
+                                                                                            <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-600 dark:text-zinc-400 mt-2">
+                                                                                                {project.timeline.milestones.map((milestone: any, i: number) => (
+                                                                                                    <li key={i}>
+                                                                                                        <span className="font-medium">{milestone.milestone}</span> ({milestone.timing}): {milestone.deliverable}
+                                                                                                    </li>
+                                                                                                ))}
+                                                                                            </ul>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Skills Required */}
+                                                                                {(project.skills_required?.length > 0 || project.requirements?.skills_needed?.length > 0) && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Skills Required
+                                                                                        </p>
+                                                                                        <div className="flex flex-wrap gap-2">
+                                                                                            {(project.skills_required || project.requirements?.skills_needed || []).map((skill: string, i: number) => (
+                                                                                                <span key={i} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md">
+                                                                                                    {skill}
+                                                                                                </span>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Success Criteria / Success Metrics */}
+                                                                                {(project.success_criteria || project.success_metrics?.length > 0) && (
+                                                                                    <div>
+                                                                                        <p className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                                                            Success {project.success_metrics ? "Metrics" : "Criteria"}
+                                                                                        </p>
+                                                                                        {project.success_criteria ? (
+                                                                                            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                                                                                                {project.success_criteria}
+                                                                                            </p>
+                                                                                        ) : (
+                                                                                            <ul className="list-disc pl-5 space-y-1 text-sm text-zinc-700 dark:text-zinc-300">
+                                                                                                {project.success_metrics.map((metric: string, i: number) => (
+                                                                                                    <li key={i}>{metric}</li>
+                                                                                                ))}
+                                                                                            </ul>
+                                                                                        )}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        </details>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {/* Core VA Role - Unicorn VA Service */}
+                                                            {analysisResult.preview.service_type === "Unicorn VA Service" && analysisResult.full_package.service_structure.core_va_role && (
                                                                 <details className="group border border-zinc-200 dark:border-zinc-700 rounded-lg overflow-hidden transition-all duration-300">
                                                                     <summary className="cursor-pointer px-4 py-3 bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors list-none [&::-webkit-details-marker]:hidden">
                                                                         <div className="flex items-center justify-between">
@@ -2040,156 +2705,214 @@ export default function DashboardClient({ user }: { user: User }) {
                                             </div>
                                         )}
 
-                                        {/* Role Title */}
-                                        {primaryRole?.title && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                                                    Role Title
-                                                </p>
-                                                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                                                    {primaryRole.title}
-                                                </p>
-                                                {primaryRole.hours_per_week && (
-                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                                                        {primaryRole.hours_per_week} hrs/week
+                                        {/* Role/Project Information - Service Type Specific */}
+                                        {analysisResult.preview?.service_type === "Dedicated VA" && primaryRole?.title && (
+                                            <>
+                                                {/* Role Title */}
+                                                <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                        Role Title
                                                     </p>
-                                                )}
-                                                {primaryRole.family && (
-                                                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
-                                                        {primaryRole.family}
+                                                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                        {primaryRole.title}
                                                     </p>
+                                                    {primaryRole.hours_per_week && (
+                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                            {primaryRole.hours_per_week} hrs/week
+                                                        </p>
+                                                    )}
+                                                </div>
+
+                                                {/* Core Outcomes */}
+                                                {primaryRole.core_outcomes && primaryRole.core_outcomes.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            90-Day Outcomes
+                                                        </p>
+                                                        <ul className="space-y-1">
+                                                            {primaryRole.core_outcomes.map((outcome: string, idx: number) => (
+                                                                <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
+                                                                    <span className="flex-1">{outcome}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 )}
-                                            </div>
+
+                                                {/* Responsibilities */}
+                                                {primaryRole.responsibilities && primaryRole.responsibilities.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            Key Responsibilities
+                                                        </p>
+                                                        <ul className="space-y-1">
+                                                            {primaryRole.responsibilities.slice(0, 5).map((resp: string, idx: number) => (
+                                                                <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
+                                                                    <span className="flex-1 line-clamp-2">{resp}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {/* Skills */}
+                                                {primaryRole.skills && primaryRole.skills.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            Skills Required
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {primaryRole.skills.slice(0, 8).map((skill: string, idx: number) => (
+                                                                <span key={idx} className="px-2 py-0.5 bg-[var(--primary)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] text-xs rounded border border-[var(--primary)]/20 dark:border-[var(--accent)]/30">
+                                                                    {skill}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Tools */}
+                                                {primaryRole.tools && primaryRole.tools.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            Tools Required
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {primaryRole.tools.slice(0, 6).map((tool: string, idx: number) => (
+                                                                <span key={idx} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded">
+                                                                    {tool}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* KPIs */}
+                                                {primaryRole.kpis && primaryRole.kpis.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            Key Performance Indicators
+                                                        </p>
+                                                        <ul className="space-y-1">
+                                                            {primaryRole.kpis.slice(0, 3).map((kpi: string, idx: number) => (
+                                                                <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                                    <span className="text-green-500 mt-0.5">•</span>
+                                                                    <span className="flex-1">{kpi}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
-                                        {/* Core Outcomes */}
-                                        {primaryRole?.core_outcomes && primaryRole.core_outcomes.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    90-Day Outcomes
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {primaryRole.core_outcomes.map((outcome: string, idx: number) => (
-                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                                                            <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
-                                                            <span className="flex-1">{outcome}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Responsibilities */}
-                                        {primaryRole?.responsibilities && primaryRole.responsibilities.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Key Responsibilities
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {primaryRole.responsibilities.map((resp: string, idx: number) => (
-                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                                                            <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
-                                                            <span className="flex-1 line-clamp-2">{resp}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Skills */}
-                                        {primaryRole?.skills && primaryRole.skills.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Skills Required
-                                                </p>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {primaryRole.skills.map((skill: string, idx: number) => (
-                                                        <span key={idx} className="px-2 py-0.5 bg-[var(--primary)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] text-xs rounded border border-[var(--primary)]/20 dark:border-[var(--accent)]/30">
-                                                            {skill}
-                                                        </span>
-                                                    ))}
+                                        {/* Unicorn VA Service */}
+                                        {analysisResult.preview?.service_type === "Unicorn VA Service" && primaryRole?.title && (
+                                            <>
+                                                {/* Role Title */}
+                                                <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                        Core VA Role
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                        {primaryRole.title}
+                                                    </p>
+                                                    {primaryRole.hours_per_week && (
+                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                            {primaryRole.hours_per_week} hrs/week
+                                                        </p>
+                                                    )}
+                                                    {analysisResult.preview?.team_support_areas && (
+                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                            {analysisResult.preview.team_support_areas} team support areas
+                                                        </p>
+                                                    )}
                                                 </div>
-                                            </div>
+
+                                                {/* Core Outcomes */}
+                                                {primaryRole.core_outcomes && primaryRole.core_outcomes.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            90-Day Outcomes
+                                                        </p>
+                                                        <ul className="space-y-1">
+                                                            {primaryRole.core_outcomes.slice(0, 3).map((outcome: string, idx: number) => (
+                                                                <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
+                                                                    <span className="text-[var(--primary)] dark:text-[var(--accent)] mt-0.5">•</span>
+                                                                    <span className="flex-1">{outcome}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {/* Skills */}
+                                                {primaryRole.skills && primaryRole.skills.length > 0 && (
+                                                    <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
+                                                            Core Skills
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {primaryRole.skills.slice(0, 6).map((skill: string, idx: number) => (
+                                                                <span key={idx} className="px-2 py-0.5 bg-[var(--primary)]/10 dark:bg-[var(--accent)]/20 text-[var(--primary)] dark:text-[var(--accent)] text-xs rounded border border-[var(--primary)]/20 dark:border-[var(--accent)]/30">
+                                                                    {skill}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
-                                        {/* Tools */}
-                                        {primaryRole?.tools && primaryRole.tools.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Tools Required
-                                                </p>
-                                                <div className="flex flex-wrap gap-1.5">
-                                                    {primaryRole.tools.map((tool: string, idx: number) => (
-                                                        <span key={idx} className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded">
-                                                            {tool}
-                                                        </span>
-                                                    ))}
+                                        {/* Projects on Demand */}
+                                        {analysisResult.preview?.service_type === "Projects on Demand" && (
+                                            <>
+                                                {/* Project Overview */}
+                                                <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                    <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                        Project Overview
+                                                    </p>
+                                                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                        {analysisResult.preview.project_count || 0} Projects
+                                                    </p>
+                                                    {analysisResult.preview.total_hours && (
+                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                            Total: {analysisResult.preview.total_hours} hours
+                                                        </p>
+                                                    )}
+                                                    {analysisResult.preview.estimated_timeline && (
+                                                        <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                            Timeline: {analysisResult.preview.estimated_timeline}
+                                                        </p>
+                                                    )}
                                                 </div>
-                                            </div>
+
+                                                {/* Project List */}
+                                                {(analysisResult.full_package?.detailed_specifications?.projects || analysisResult.full_package?.service_structure?.projects || []).slice(0, 3).map((project: any, idx: number) => (
+                                                    <div key={idx} className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
+                                                        <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
+                                                            Project {idx + 1}
+                                                        </p>
+                                                        <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                                                            {project.project_name}
+                                                        </p>
+                                                        {(project.estimated_hours || project.timeline?.estimated_hours) && (
+                                                            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                                                                {project.estimated_hours || project.timeline?.estimated_hours} hrs • {typeof project.timeline === "string" ? project.timeline : project.timeline?.duration || ""}
+                                                            </p>
+                                                        )}
+                                                        {project.objective && (
+                                                            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 line-clamp-2">
+                                                                {project.objective}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </>
                                         )}
 
-                                        {/* KPIs */}
-                                        {primaryRole?.kpis && primaryRole.kpis.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Key Performance Indicators
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {primaryRole.kpis.map((kpi: string, idx: number) => (
-                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                                                            <span className="text-green-500 mt-0.5">•</span>
-                                                            <span className="flex-1">{kpi}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Key Risks */}
-                                        {analysisResult.preview?.key_risks && analysisResult.preview.key_risks.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Key Risks
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {analysisResult.preview.key_risks.map((risk: string, idx: number) => (
-                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                                                            <span className="text-red-500 mt-0.5">•</span>
-                                                            <span className="flex-1">{risk}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Critical Questions */}
-                                        {analysisResult.preview?.critical_questions && analysisResult.preview.critical_questions.length > 0 && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-2">
-                                                    Critical Questions
-                                                </p>
-                                                <ul className="space-y-1">
-                                                    {analysisResult.preview.critical_questions.map((question: string, idx: number) => (
-                                                        <li key={idx} className="text-xs text-zinc-700 dark:text-zinc-300 flex items-start gap-2">
-                                                            <span className="text-amber-500 mt-0.5">•</span>
-                                                            <span className="flex-1">{question}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-
-                                        {/* Confidence */}
-                                        {analysisResult.preview?.confidence && (
-                                            <div className="mb-4 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg">
-                                                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase mb-1">
-                                                    Overall Confidence
-                                                </p>
-                                                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
-                                                    {analysisResult.preview.confidence}
-                                                </p>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -2199,6 +2922,7 @@ export default function DashboardClient({ user }: { user: User }) {
                                 <RefinementForm
                                     analysisId={savedAnalysisId}
                                     userId={user.id}
+                                    serviceType={analysisResult.preview?.service_type}
                                     onRefinementComplete={handleRefinementComplete}
                                 />
                             </div>

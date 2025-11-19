@@ -279,7 +279,56 @@ async function classifyServiceType(
   intakeData: any,
   discovery: any
 ) {
+  // Pre-classification checks - hard rules that override scoring
+  const preClassificationChecks = `
+
+HARD RULES (these override scoring):
+
+1. If weekly_hours > 0 AND all tasks are ongoing/recurring AND tasks fit within 2-3 related skill domains → LIKELY DEDICATED VA
+
+2. If weekly_hours = 0 OR outcome describes finite deliverables OR comments mention "one-time" → LIKELY PROJECTS ON DEMAND  
+
+3. Only classify as UNICORN VA if there's clearly a core role (60%+ of work) PLUS specialized needs that require different expertise
+
+
+
+UNICORN VA MUST HAVE:
+
+- A clear primary responsibility (e.g., "social media management")
+
+- PLUS secondary needs requiring specialized skills (e.g., video editing, graphic design)
+
+- NOT just "multiple tools" - that's normal for any role
+
+
+
+DEDICATED VA characteristics:
+
+- Tasks cluster around ONE core function
+
+- Hours are weekly/recurring
+
+- Role has ongoing operational ownership
+
+- Skills are complementary, not disparate
+
+
+
+PROJECTS ON DEMAND characteristics:
+
+- Tasks have clear end states
+
+- Work is batch/campaign-based
+
+- Deliverables are countable (build X, create Y, migrate Z)
+
+- Timeline is project duration, not weekly hours
+
+`;
+
   const classificationPrompt = `You are a service type classifier for a VA agency. Based on the client's needs, classify which service model fits best.
+
+${preClassificationChecks}
 
 INTAKE DATA:
 ${JSON.stringify(intakeData, null, 2)}
