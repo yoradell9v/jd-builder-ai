@@ -29,9 +29,12 @@ export default function SignInPage() {
                 setError(data.error || "An error occurred during sign in");
                 return;
             }
+            
+            // Use window.location.href for a full page reload to ensure cookies are available
+            // This is especially important in production where cookies might not be immediately available
             setTimeout(() => {
-                router.push("/");
-            }, 300);
+                window.location.href = "/dashboard";
+            }, 100);
 
 
         } catch (err) {
