@@ -50,7 +50,7 @@ export default async function DashboardPage() {
     const user = await getDashboardData();
 
     return (
-        <UserProvider user={user}>
+        <UserProvider initialUser={user}>
             <DashboardClient user={user} />
         </UserProvider>
     );
