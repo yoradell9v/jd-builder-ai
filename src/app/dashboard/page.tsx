@@ -8,7 +8,7 @@ import { UserProvider, User } from "@/context/UserContext";
 async function getDashboardData() {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
-
+    console.log(`Access token: ${accessToken}`);
     if (!accessToken) {
         redirect("/signin");
     }

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid'
 import { ChevronLeft } from "lucide-react"
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordContent() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const token = searchParams.get('token')

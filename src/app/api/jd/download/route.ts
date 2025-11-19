@@ -193,6 +193,7 @@ export async function POST(request: Request) {
         }
         y -= 5;
       }
+    };
 
       // Skills
       if (coreRole?.skill_requirements || detailedJd?.skills_required) {
