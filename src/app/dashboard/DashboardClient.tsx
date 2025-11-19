@@ -376,9 +376,6 @@ export default function DashboardClient({ user }: { user: User }) {
     //New Analysis State
     const [formKey, setFormKey] = useState(0);
 
-    //Download States
-    const [isDownloading, setIsDownloading] = useState(false);
-
     //Tab States
     const [activeTab, setActiveTab] = useState<'overview' | 'roles' | 'implementation' | 'risks'>('overview');
     const [actionsMenuOpen, setActionsMenuOpen] = useState(false);

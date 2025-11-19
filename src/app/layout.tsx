@@ -24,14 +24,10 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.className} antialiased`}>
         <UserProvider>
-          {children}
+          <ClientProviders>
+            {children}
+          </ClientProviders>
         </UserProvider>
-      <body
-        className={`${poppins.className} antialiased`}
-      >
-        <ClientProviders>
-          {children}
-        </ClientProviders>
       </body>
     </html>
   );
