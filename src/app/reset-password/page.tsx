@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/solid'
 import { ChevronLeft } from "lucide-react"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
     const searchParams = useSearchParams()
     const router = useRouter()
     const token = searchParams.get('token')
@@ -322,5 +322,23 @@ export default function ResetPasswordPage() {
                 </div>
             </form>
         </div>
+    )
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div
+                className="min-h-screen flex items-center justify-center px-4 transition-colors duration-150"
+                style={{ backgroundColor: "var(--background)", color: "var(--text-primary)" }}
+            >
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--accent)] mx-auto mb-4"></div>
+                    <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
+                </div>
+            </div>
+        }>
+            <ResetPasswordForm />
+        </Suspense>
     )
 }
