@@ -171,7 +171,7 @@ export default function Navbar() {
             <AccountDetailsModal
                 isOpen={isAccountDetailsModalOpen}
                 onClose={() => setIsAccountDetailsModalOpen(false)}
-                user={user}
+                user={user.user}
                 onLogout={handleConfirmLogout}
             />
 
