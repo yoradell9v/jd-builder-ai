@@ -4,7 +4,7 @@ import path from "path";
 
 export const runtime = "nodejs";
 
-const MAX_SOP_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_SOP_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_SOP_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".txt"]);
 const ALLOWED_SOP_MIME_TYPES = new Set([
   "application/pdf",
@@ -12,24 +12,6 @@ const ALLOWED_SOP_MIME_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "text/plain",
 ]);
-const SOP_RELEVANCE_KEYWORDS = [
-  "process",
-  "procedure",
-  "workflow",
-  "step",
-  "responsible",
-  "responsibility",
-  "task",
-  "guideline",
-  "standard operating",
-  "checklist",
-  "handoff",
-  "frequency",
-  "owner",
-  "outcome",
-];
-const SOP_SUMMARY_CHAR_LIMIT = 20000;
-const SOP_EXCERPT_CHAR_LIMIT = 3000;
 
 function getFileExtension(fileName?: string | null) {
   if (!fileName) return "";
@@ -72,24 +54,12 @@ async function extractTextFromSop(file: File) {
 
   try {
     if (extension === ".pdf" || mimeType === "application/pdf") {
-      try {
-        // Import pdf-parse correctly
-        const pdfParse = (await import("pdf-parse")).default;
-        const result = await pdfParse(buffer);
-
-        if (!result || !result.text) {
-          throw new Error("PDF parsing returned no text content");
-        }
-
-        return normalizeWhitespace(result.text);
-      } catch (pdfError) {
-        console.error("PDF parsing error details:", pdfError);
-        throw new Error(
-          `Failed to parse PDF: ${
-            pdfError instanceof Error ? pdfError.message : "Unknown error"
-          }`
-        );
+      const pdfParse = (await import("pdf-parse")).default;
+      const result = await pdfParse(buffer);
+      if (!result || !result.text) {
+        throw new Error("PDF parsing returned no text content");
       }
+      return normalizeWhitespace(result.text);
     }
 
     if (
@@ -97,69 +67,40 @@ async function extractTextFromSop(file: File) {
       mimeType ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
-      try {
-        const mammoth = await import("mammoth");
-        const result = await mammoth.extractRawText({ buffer });
-
-        if (!result || !result.value) {
-          throw new Error("DOCX parsing returned no text content");
-        }
-
-        return normalizeWhitespace(result.value);
-      } catch (docxError) {
-        console.error("DOCX parsing error details:", docxError);
-        throw new Error(
-          `Failed to parse DOCX: ${
-            docxError instanceof Error ? docxError.message : "Unknown error"
-          }`
-        );
+      const mammoth = await import("mammoth");
+      const result = await mammoth.extractRawText({ buffer });
+      if (!result || !result.value) {
+        throw new Error("DOCX parsing returned no text content");
       }
+      return normalizeWhitespace(result.value);
     }
 
     if (extension === ".doc" || mimeType === "application/msword") {
-      try {
-        const WordExtractor = (await import("word-extractor")).default;
-        const extractor = new WordExtractor();
-        const doc = await extractor.extract(buffer);
-        const text =
-          typeof doc?.getBody === "function"
-            ? doc.getBody()
-            : String(doc ?? "");
-
-        if (!text) {
-          throw new Error("DOC parsing returned no text content");
-        }
-
-        return normalizeWhitespace(text);
-      } catch (docError) {
-        console.error("DOC parsing error details:", docError);
-        throw new Error(
-          `Failed to parse DOC: ${
-            docError instanceof Error ? docError.message : "Unknown error"
-          }`
-        );
+      const WordExtractor = (await import("word-extractor")).default;
+      const extractor = new WordExtractor();
+      const doc = await extractor.extract(buffer);
+      const text =
+        typeof doc?.getBody === "function" ? doc.getBody() : String(doc ?? "");
+      if (!text) {
+        throw new Error("DOC parsing returned no text content");
       }
+      return normalizeWhitespace(text);
     }
 
-    // Default to UTF-8 text for .txt files
     if (extension === ".txt" || mimeType === "text/plain") {
       const text = buffer.toString("utf-8");
-
       if (!text || text.trim().length === 0) {
         throw new Error("Text file is empty");
       }
-
       return normalizeWhitespace(text);
     }
 
     throw new Error(`Unsupported file type: ${extension || mimeType}`);
   } catch (error) {
     console.error("SOP extraction error:", error);
-
-    // Provide more specific error messages
     if (error instanceof Error) {
       if (error.message.includes("Failed to parse")) {
-        throw error; // Re-throw our custom errors
+        throw error;
       }
       throw new Error(
         `Failed to parse the SOP file (${extension || mimeType}): ${
@@ -167,50 +108,10 @@ async function extractTextFromSop(file: File) {
         }`
       );
     }
-
     throw new Error(
       "Failed to parse the SOP file. Please ensure it's a valid PDF, DOC, DOCX, or TXT document."
     );
   }
-}
-
-function isSopRelevant(text: string) {
-  if (!text || text.length < 200) {
-    return false;
-  }
-
-  const lower = text.toLowerCase();
-  const keywordHits = SOP_RELEVANCE_KEYWORDS.filter((keyword) =>
-    lower.includes(keyword)
-  ).length;
-
-  const wordCount = text.split(/\s+/).length;
-
-  return keywordHits >= 3 && wordCount >= 50;
-}
-
-function truncateForPrompt(text: string, limit: number) {
-  if (text.length <= limit) {
-    return text;
-  }
-  return `${text.slice(0, limit)}...`;
-}
-
-function normalizeStringArray(input: unknown): string[] {
-  if (Array.isArray(input)) {
-    return input
-      .map((item) => (typeof item === "string" ? item.trim() : ""))
-      .filter((item) => item.length > 0);
-  }
-
-  if (typeof input === "string" && input.trim().length > 0) {
-    return input
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item.length > 0);
-  }
-
-  return [];
 }
 
 function normalizeTasks(input: unknown): string[] {
@@ -226,347 +127,1250 @@ function normalizeTasks(input: unknown): string[] {
   return [];
 }
 
-// Classification engine - maps keywords to craft families
-const CRAFT_KEYWORDS = {
-  "Tech/Automation": [
-    "ghl",
-    "workflow",
-    "pipeline",
-    "trigger",
-    "funnel",
-    "zaps",
-    "automations",
-    "webhook",
-    "integration",
-    "api",
-  ],
-  "Creative/Build": {
-    Design: [
-      "banner",
-      "thumbnail",
-      "canva",
-      "brand kit",
-      "ad creative",
-      "graphic",
+function normalizeStringArray(input: unknown): string[] {
+  if (Array.isArray(input)) {
+    return input
+      .map((item) => (typeof item === "string" ? item.trim() : ""))
+      .filter((item) => item.length > 0);
+  }
+  if (typeof input === "string" && input.trim().length > 0) {
+    return input
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+  return [];
+}
+
+// Helper function to remove team_support_areas for Dedicated VA service type
+function cleanTeamSupportAreas(analysisResult: any): any {
+  if (!analysisResult) return analysisResult;
+
+  const serviceType = 
+    analysisResult.preview?.service_type ||
+    analysisResult.full_package?.service_structure?.service_type ||
+    analysisResult.full_package?.executive_summary?.service_recommendation?.type;
+
+  if (serviceType === "Dedicated VA") {
+    const cleaned = JSON.parse(JSON.stringify(analysisResult)); // Deep clone
+
+    // Remove from preview
+    if (cleaned.preview?.team_support_areas !== undefined) {
+      delete cleaned.preview.team_support_areas;
+    }
+
+    // Remove from full_package.service_structure
+    if (cleaned.full_package?.service_structure?.team_support_areas !== undefined) {
+      delete cleaned.full_package.service_structure.team_support_areas;
+    }
+
+    // Also check if it's directly in full_package
+    if (cleaned.full_package?.team_support_areas !== undefined) {
+      delete cleaned.full_package.team_support_areas;
+    }
+
+    return cleaned;
+  }
+
+  return analysisResult;
+}
+
+// ============================================================================
+// STAGE 1: DEEP DISCOVERY
+// ============================================================================
+
+async function runDeepDiscovery(
+  openai: OpenAI,
+  intakeData: any,
+  sopText: string | null
+) {
+  const discoveryPrompt = `You are a business analyst conducting deep discovery for a virtual assistant placement.
+  
+INTAKE DATA:
+${JSON.stringify(intakeData, null, 2)}
+
+${
+  sopText
+    ? `SOP DOCUMENT (use this to understand current processes and identify implicit needs):
+${sopText.slice(0, 15000)}`
+    : "No SOP provided."
+}
+
+Your job is to extract deep insights that aren't explicitly stated. Respond with JSON:
+
+{
+  "business_context": {
+    "company_stage": "startup | growth | established",
+    "primary_bottleneck": "What's preventing the 90-day outcome?",
+    "hidden_complexity": "What complexities are implied but not stated?",
+    "growth_indicators": "Signs of scaling needs or trajectory"
+  },
+  
+  "task_analysis": {
+    "task_clusters": [
+      {
+        "cluster_name": "Descriptive name for related tasks",
+        "tasks": ["task 1", "task 2"],
+        "workflow_type": "creative | analytical | operational | client-facing",
+        "interdependencies": ["What other clusters does this depend on?"],
+        "complexity_score": 1-10,
+        "estimated_hours_weekly": 5
+      }
     ],
-    Web: ["wordpress", "webflow", "landing page", "html", "css", "website"],
-    Video: ["video edit", "premiere", "final cut", "motion", "thumbnail"],
+    "skill_requirements": {
+      "technical": ["Specific technical skills with proficiency levels"],
+      "soft": ["Communication, problem-solving, etc. with context"],
+      "domain": ["Industry or domain knowledge needed"]
+    },
+    "implicit_needs": [
+      "Requirements not explicitly stated but clearly needed",
+      "Example: 'Tasks mention reporting but no BI tool listed - needs data viz skills'"
+    ]
   },
-  "Growth/Revenue": {
-    SDR: ["dms", "cold email", "appointments", "inbox", "outreach", "calls"],
-    Marketing: ["campaign", "ads", "marketing", "growth"],
-    Social: ["social media", "instagram", "tiktok", "linkedin", "posts"],
-    Copy: ["email copy", "ad copy", "blogs", "scripts", "content writing"],
+  
+  "sop_insights": {
+    "process_complexity": "low | medium | high",
+    "documented_workflows": ["List of documented processes"],
+    "documentation_gaps": ["What's missing from SOPs"],
+    "handoff_points": ["Where work passes between people/systems"],
+    "pain_points": ["Bottlenecks or issues evident in current process"],
+    "tools_mentioned": ["Tools found in SOP that aren't in intake"],
+    "implicit_requirements": ["Skills/access needed based on SOP"]
   },
-  "Business/Operations": {
-    PM: ["sprints", "roadmap", "coordination", "handoffs", "project"],
-    Admin: ["admin", "calendar", "email management", "scheduling"],
-    Support: ["tickets", "helpdesk", "customer service", "cs"],
-    Data: ["dashboard", "report", "metrics", "kpi", "analytics"],
-  },
-};
-
-// Adjacency matrix for Unicorn pairing
-const ALLOWED_UNICORN_PAIRS = [
-  ["Admin/EA", "Ops Coordinator", "Project Manager"],
-  ["Marketing Coordinator", "Social Media Manager", "Copywriter"],
-  ["GHL Implementer", "CRM/Automation Tech", "Data Analyst"],
-  ["Graphic Designer", "Video Editor"],
-];
-
-// KPI Library
-const KPI_LIBRARY = {
-  "Admin/EA": [
-    "Task SLA adherence %",
-    "Inbox zero cadence per week",
-    "Meeting prep on-time %",
-    "SOP coverage %",
+  
+  "context_gaps": [
+    {
+      "question": "Clarifying question for the client",
+      "why_it_matters": "How this impacts role design",
+      "assumption_if_unanswered": "What we'll assume if they don't answer"
+    }
   ],
-  "Ops Coordinator": [
-    "Sprint throughput (stories/week)",
-    "On-time completion %",
-    "Blockers resolved <24h %",
-  ],
-  "Project Manager": [
-    "Sprint throughput (stories/week)",
-    "On-time completion %",
-    "Blockers resolved <24h %",
-    "Stakeholder satisfaction score",
-  ],
-  Support: [
-    "CSAT %",
-    "First response time",
-    "Resolution time",
-    "Doc updates per week",
-  ],
-  SDR: [
-    "Dials/emails per day",
-    "Reply rate %",
-    "Booked calls per week",
-    "No-show rate %",
-  ],
-  "Marketing Coordinator": [
-    "Campaigns launched per month",
-    "Asset readiness %",
-    "CTA click-through %",
-  ],
-  "Social Media Manager": [
-    "Posts per week",
-    "Avg saves/shares per post",
-    "Profile click-through %",
-  ],
-  Copywriter: [
-    "Drafts per week",
-    "Approval rate %",
-    "CTR uplift vs baseline %",
-  ],
-  "Graphic Designer": [
-    "Assets per week",
-    "Acceptance rate %",
-    "On-brief score",
-  ],
-  "Video Editor": [
-    "Videos per week",
-    "First-cut approval %",
-    "Avg turnaround (days)",
-  ],
-  "Web Developer": [
-    "Pages per sprint",
-    "QA pass rate %",
-    "Load speed (LCP ms)",
-  ],
-  "GHL Implementer": [
-    "Automations launched per month",
-    "Form error rate %",
-    "Booked calls per month",
-  ],
-  "CRM/Automation Tech": [
-    "Data hygiene %",
-    "Sync error incidents",
-    "SLA for fixes (hours)",
-  ],
-  "Data Analyst": [
-    "Dashboard freshness (days)",
-    "Accuracy %",
-    "Insight actions per month",
-  ],
-};
-
-// Personality fit profiles
-const PERSONALITY_PROFILES = {
-  "Admin/EA": [
-    "Highly organized and proactive",
-    "Excellent written and verbal communication",
-    "Detail-oriented with follow-through",
-    "Professional and discreet",
-  ],
-  "Ops Coordinator": [
-    "Systems thinker",
-    "Strong coordination skills",
-    "Proactive problem solver",
-    "Clear communicator",
-  ],
-  "Project Manager": [
-    "Strategic and organized",
-    "Strong stakeholder management",
-    "Proactive and accountable",
-    "Excellent documentation habits",
-  ],
-  "GHL Implementer": [
-    "Systematic and methodical",
-    "Clear written communication",
-    "Low-ego, open to feedback",
-    "Detail-safe with QA mindset",
-  ],
-  "CRM/Automation Tech": [
-    "Analytical and logical",
-    "Strong troubleshooting skills",
-    "Documentation-focused",
-    "Patient with technical details",
-  ],
-  "Data Analyst": [
-    "Analytical and precise",
-    "Strong pattern recognition",
-    "Clear data storytelling",
-    "Attention to detail",
-  ],
-  "Marketing Coordinator": [
-    "Organized multitasker",
-    "Creative problem solver",
-    "Strong communication",
-    "Results-oriented",
-  ],
-  "Social Media Manager": [
-    "Creative and trend-aware",
-    "Strong visual sense",
-    "Engaging communicator",
-    "Community-focused",
-  ],
-  Copywriter: [
-    "Language-precise",
-    "Persuasive storyteller",
-    "Adaptable voice",
-    "Research-oriented",
-  ],
-  "Graphic Designer": [
-    "Creative and inventive",
-    "Open to iterative feedback",
-    "Strong visual communication",
-    "Brand-conscious",
-  ],
-  "Video Editor": [
-    "Creative storyteller",
-    "Technical proficiency",
-    "Detail-oriented",
-    "Deadline-driven",
-  ],
-  "Web Developer": [
-    "Methodical and systematic",
-    "Quality-focused",
-    "Less client-facing",
-    "Continuous learner",
-  ],
-  SDR: [
-    "Resilient and persistent",
-    "Extroverted and personable",
-    "Quick response time",
-    "Goal-oriented",
-  ],
-  Support: [
-    "Patient and empathetic",
-    "Clear communicator",
-    "Consistent documentation",
-    "Problem-solver",
-  ],
-};
-
-function classifyTasks(tasks: string[], tools: string[], outcome: string) {
-  const allText = [...tasks, ...tools, outcome].join(" ").toLowerCase();
-  const crafts: { family: string; role: string; keywords: number }[] = [];
-
-  // Check Tech/Automation
-  const techMatches = CRAFT_KEYWORDS["Tech/Automation"].filter((kw) =>
-    allText.includes(kw.toLowerCase())
-  ).length;
-  if (techMatches > 0) {
-    crafts.push({
-      family: "Tech/Automation",
-      role: "GHL Implementer",
-      keywords: techMatches,
-    });
+  
+  "measurement_capability": {
+    "current_tracking": ["What metrics/KPIs are they currently tracking"],
+    "tools_available": ["What tools they have for measurement"],
+    "tracking_gaps": ["What they want to measure but can't currently"],
+    "recommendations": ["What instrumentation/tools they should add"]
   }
-
-  // Check Creative/Build
-  Object.entries(CRAFT_KEYWORDS["Creative/Build"]).forEach(
-    ([role, keywords]) => {
-      const matches = keywords.filter((kw) =>
-        allText.includes(kw.toLowerCase())
-      ).length;
-      if (matches > 0) {
-        crafts.push({ family: "Creative/Build", role, keywords: matches });
-      }
-    }
-  );
-
-  // Check Growth/Revenue
-  Object.entries(CRAFT_KEYWORDS["Growth/Revenue"]).forEach(
-    ([role, keywords]) => {
-      const matches = keywords.filter((kw) =>
-        allText.includes(kw.toLowerCase())
-      ).length;
-      if (matches > 0) {
-        crafts.push({ family: "Growth/Revenue", role, keywords: matches });
-      }
-    }
-  );
-
-  // Check Business/Operations
-  Object.entries(CRAFT_KEYWORDS["Business/Operations"]).forEach(
-    ([role, keywords]) => {
-      const matches = keywords.filter((kw) =>
-        allText.includes(kw.toLowerCase())
-      ).length;
-      if (matches > 0) {
-        crafts.push({ family: "Business/Operations", role, keywords: matches });
-      }
-    }
-  );
-
-  return crafts.sort((a, b) => b.keywords - a.keywords);
 }
 
-function determineSplitLogic(
-  crafts: { family: string; role: string }[],
-  weeklyHours: number,
-  clientFacing: boolean
-) {
-  const families = [...new Set(crafts.map((c) => c.family))];
+Be specific and insightful. Look for what's NOT said but is clearly implied.`;
 
-  // Rule 1: Multiple families → split
-  if (families.length > 1) {
-    return { shouldSplit: true, reason: "Multiple craft families detected" };
-  }
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "You are an expert business analyst." },
+      { role: "user", content: discoveryPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.3,
+    max_tokens: 2500,
+  });
 
-  // Rule 2: Deep work + client-facing → split
-  const deepWorkFamilies = ["Tech/Automation", "Creative/Build"];
-  if (clientFacing && deepWorkFamilies.includes(families[0])) {
-    return {
-      shouldSplit: true,
-      reason: "Deep work and client-facing conflict",
-    };
-  }
-
-  // Rule 3: Too many hours for secondary craft
-  const hoursPerCraft = weeklyHours / crafts.length;
-  if (crafts.length > 1 && hoursPerCraft < 5) {
-    return {
-      shouldSplit: true,
-      reason: "Secondary craft needs <5 hrs/week",
-    };
-  }
-
-  return { shouldSplit: false, reason: "Single focused role appropriate" };
+  return JSON.parse(completion.choices[0].message.content || "{}");
 }
 
-function determineService(
-  crafts: { family: string; role: string }[],
-  weeklyHours: number,
-  splitNeeded: boolean
+// ============================================================================
+// STAGE 1.5: SERVICE TYPE CLASSIFICATION
+// ============================================================================
+
+async function classifyServiceType(
+  openai: OpenAI,
+  intakeData: any,
+  discovery: any
 ) {
-  // POD if less than 20 hours
-  if (weeklyHours < 20) {
-    return {
-      service: "POD",
-      reason: "Low weekly hours suit project-based work",
-    };
-  }
+  const classificationPrompt = `You are a service type classifier for a VA agency. Based on the client's needs, classify which service model fits best.
 
-  // Check if adjacent for Unicorn
-  if (splitNeeded && crafts.length === 2) {
-    const rolesMatch = ALLOWED_UNICORN_PAIRS.some((pair) =>
-      crafts.every((c) => pair.includes(c.role))
-    );
+INTAKE DATA:
+${JSON.stringify(intakeData, null, 2)}
 
-    if (rolesMatch) {
-      return {
-        service: "Unicorn VA",
-        reason: "Adjacent crafts can be combined efficiently",
-      };
+DISCOVERY INSIGHTS:
+${JSON.stringify(discovery, null, 2)}
+
+SERVICE TYPE DEFINITIONS:
+
+1. DEDICATED VA
+   - Best for: Ongoing, recurring operational tasks
+   - Client has: Specific, well-defined role for one person
+   - Tasks are: Cohesive and within related skill domains
+   - Engagement: Long-term, consistent workload
+   - Example: Executive assistant, customer support lead, operations coordinator
+
+2. PROJECTS ON DEMAND
+   - Best for: One-off, project-based, or sporadic needs
+   - Client has: Multiple disconnected projects, not ongoing operations
+   - Tasks are: Varied, non-recurring, or campaign-based
+   - Engagement: Project-by-project basis with defined start/end
+   - Example: Website build, funnel setup, one-time migration, content creation project
+
+3. UNICORN VA SERVICE
+   - Best for: Core ongoing role + diverse additional skill needs
+   - Client has: One primary responsibility + variety of secondary needs
+   - Tasks are: Mix of core competency + adjacent specialized skills
+   - Engagement: Dedicated VA for core work + team access for specialized tasks
+   - Example: Marketing VA (core) + graphic design + video editing + copywriting needs
+
+CLASSIFICATION CRITERIA:
+
+Analyze these factors:
+- Task Cohesion: Do tasks naturally fit one person's skill set?
+- Temporal Pattern: Ongoing daily work vs project-based?
+- Skill Distribution: Single domain vs multiple specialized domains?
+- Business Integration: Internal operations vs external deliverables?
+- Workload Consistency: Steady hours vs fluctuating needs?
+
+Respond with JSON:
+
+{
+  "service_type_analysis": {
+    "recommended_service": "Dedicated VA | Projects on Demand | Unicorn VA Service",
+    "confidence": "High | Medium | Low",
+    
+    "factors": {
+      "task_cohesion": {
+        "score": 1-10,
+        "reasoning": "Are tasks related enough for one person?"
+      },
+      "temporal_pattern": {
+        "pattern": "ongoing | project-based | hybrid",
+        "reasoning": "What's the engagement timeline?"
+      },
+      "skill_distribution": {
+        "core_skills": ["Primary skills needed"],
+        "secondary_skills": ["Additional specialized skills"],
+        "fit_assessment": "Do these fit in one person?"
+      },
+      "business_integration": {
+        "type": "internal_operations | external_deliverables | mixed",
+        "reasoning": "Is this about running operations or delivering projects?"
+      },
+      "workload_consistency": {
+        "pattern": "steady | fluctuating | seasonal",
+        "weekly_hours": "Estimated hours breakdown"
+      }
+    },
+    
+    "service_fit_scores": {
+      "dedicated_va": {
+        "score": 1-10,
+        "why_fits": ["Reasons this service works"],
+        "why_doesnt": ["Reasons this service doesn't work"]
+      },
+      "projects_on_demand": {
+        "score": 1-10,
+        "why_fits": ["Reasons this service works"],
+        "why_doesnt": ["Reasons this service doesn't work"]
+      },
+      "unicorn_va": {
+        "score": 1-10,
+        "why_fits": ["Reasons this service works"],
+        "why_doesnt": ["Reasons this service doesn't work"]
+      }
+    },
+    
+    "decision_logic": "Explain why the recommended service is the best fit",
+    
+    "edge_cases": [
+      "Scenarios where this recommendation might not work",
+      "Alternative service type to consider if X changes"
+    ],
+    
+    "client_validation_questions": [
+      {
+        "question": "Question to validate the service type choice",
+        "why_matters": "How the answer affects service type",
+        "if_yes": "Impact if they answer yes",
+        "if_no": "Impact if they answer no"
+      }
+    ]
+  },
+  
+  "role_structure_by_service": {
+    "if_dedicated_va": {
+      "role_count": 1,
+      "role_description": "Single cohesive role description",
+      "hours_per_week": "From intake",
+      "skill_profile": "Combined skill requirements"
+    },
+    
+    "if_projects_on_demand": {
+      "project_types": [
+        {
+          "project_name": "Project category",
+          "estimated_hours": "Hours for this project",
+          "skills_needed": ["Skills for this project"],
+          "deliverables": ["What client gets"],
+          "timeline": "Estimated completion time"
+        }
+      ],
+      "engagement_model": "How projects would be scoped and delivered"
+    },
+    
+    "if_unicorn_va": {
+      "core_role": {
+        "title": "Primary VA role title",
+        "hours_per_week": "Hours for core work",
+        "core_responsibilities": ["Main ongoing tasks"],
+        "skills_needed": ["Core skill set"]
+      },
+      "team_support_needs": [
+        {
+          "skill_area": "Specialized skill category",
+          "estimated_hours_monthly": "Hours needed",
+          "use_cases": ["When this skill is needed"],
+          "why_not_core_va": "Why this doesn't fit the core VA"
+        }
+      ]
     }
   }
+}
 
-  if (splitNeeded) {
-    return {
-      service: "Dedicated + POD",
-      reason: "Multiple non-adjacent roles need separation",
-    };
+Be analytical and objective. The goal is to match the client's actual needs to the right service model, not force them into a specific service.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "You are a service classification expert." },
+      { role: "user", content: classificationPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.3,
+    max_tokens: 2500,
+  });
+
+  return JSON.parse(completion.choices[0].message.content || "{}");
+}
+
+// ============================================================================
+// STAGE 2: SERVICE-AWARE ROLE ARCHITECTURE
+// ============================================================================
+
+async function designRoleArchitecture(
+  openai: OpenAI,
+  intakeData: any,
+  discovery: any,
+  serviceClassification: any
+) {
+  const recommendedService =
+    serviceClassification.service_type_analysis.recommended_service;
+
+  const serviceSpecificInstructions: Record<string, string> = {
+    "Dedicated VA": `
+You are designing a DEDICATED VA role. Create ONE cohesive role that:
+- Combines all tasks into a single, manageable position
+- Has a clear core mission and outcome ownership
+- Balances the workload across ${intakeData.weekly_hours} hours/week
+- Includes all necessary skills in one person's capability range
+
+IMPORTANT: Do NOT include "team_support_areas" in your response. This is a single dedicated VA role only.
+
+Respond with JSON:
+{
+  "service_type": "Dedicated VA",
+  "dedicated_va_role": {
+    "title": "Specific role title",
+    "hours_per_week": ${intakeData.weekly_hours},
+    "core_responsibility": "Primary outcome this role owns",
+    "task_allocation": {
+      "from_intake": ["All intake tasks mapped here"],
+      "estimated_breakdown": "How hours split across task types"
+    },
+    "skill_requirements": {
+      "required": ["Must-have skills"],
+      "nice_to_have": ["Bonus skills"],
+      "growth_areas": ["Skills they can develop over time"]
+    },
+    "workflow_ownership": ["All workflow clusters owned by this role"],
+    "interaction_model": {
+      "reports_to": "Role or person",
+      "collaborates_with": ["Other roles/teams"],
+      "sync_needs": "Daily | Weekly | Async-first"
+    }
+  },
+  "pros": [
+    "Why this structure works well",
+    "Specific advantages for this client"
+  ],
+  "cons": [
+    "Honest limitations or tradeoffs",
+    "What this structure doesn't solve"
+  ],
+  "scaling_path": "How this structure evolves as needs grow",
+  "alternative_consideration": "What would make you switch to a different service type"
+}`,
+
+    "Projects on Demand": `
+You are scoping PROJECTS ON DEMAND. Create a project-based breakdown that:
+- Groups tasks into discrete deliverable projects
+- Defines clear start/end points for each project
+- Specifies deliverables and acceptance criteria
+- Estimates hours per project (not weekly recurring hours)
+- Can be executed sequentially or in parallel
+
+Respond with JSON:
+{
+  "service_type": "Projects on Demand",
+  "projects": [
+    {
+      "project_name": "Descriptive project name",
+      "category": "Type of project (e.g., Marketing, Tech, Operations)",
+      "objective": "What this project achieves",
+      "deliverables": [
+        "Specific deliverable 1 with acceptance criteria",
+        "Specific deliverable 2 with acceptance criteria"
+      ],
+      "estimated_hours": "Total hours for project",
+      "timeline": "Estimated duration (e.g., 2-3 weeks)",
+      "skills_required": ["Skills needed for this project"],
+      "dependencies": ["What needs to exist before starting"],
+      "success_criteria": "How we know it's done well"
+    }
+  ],
+  "recommended_sequence": "Order to execute projects and why",
+  "total_investment": {
+    "hours": "Sum of all project hours",
+    "timeline": "Total timeline if sequential"
+  },
+  "pros": [
+    "Why this structure works well",
+    "Specific advantages for this client"
+  ],
+  "cons": [
+    "Honest limitations or tradeoffs",
+    "What this structure doesn't solve"
+  ],
+  "scaling_path": "How this could transition to ongoing engagement",
+  "alternative_consideration": "What would make you switch to a different service type"
+}`,
+
+    "Unicorn VA Service": `
+You are designing a UNICORN VA SERVICE. Create a structure with:
+1. ONE core Dedicated VA role (ongoing, recurring tasks - 60-80% of work)
+2. TEAM SUPPORT AREAS (specialized skills accessed on-demand)
+
+The core VA should handle the primary ongoing work. Team support covers specialized needs that:
+- Require expertise beyond the core VA's skill set
+- Are needed occasionally, not daily
+- Would be inefficient to train one person on
+- Benefit from specialist-level execution
+
+Respond with JSON:
+{
+  "service_type": "Unicorn VA Service",
+  "core_va_role": {
+    "title": "Core VA role title",
+    "hours_per_week": "Hours for recurring work",
+    "core_responsibility": "Primary ongoing outcome",
+    "recurring_tasks": ["Tasks the VA does daily/weekly"],
+    "skill_requirements": {
+      "required": ["Core skills"],
+      "nice_to_have": ["Bonus skills"]
+    },
+    "workflow_ownership": ["Workflows owned by core VA"]
+  },
+  "team_support_areas": [
+    {
+      "skill_category": "e.g., Graphic Design",
+      "use_cases": ["When this skill is needed"],
+      "estimated_hours_monthly": "Hours per month",
+      "deliverables": ["What the specialist produces"],
+      "why_team_not_va": "Why this doesn't fit the core VA",
+      "example_requests": [
+        "Example task 1 for this specialist",
+        "Example task 2 for this specialist"
+      ]
+    }
+  ],
+  "coordination_model": "How core VA and team specialists collaborate",
+  "pros": [
+    "Why this structure works well",
+    "Specific advantages for this client"
+  ],
+  "cons": [
+    "Honest limitations or tradeoffs",
+    "What this structure doesn't solve"
+  ],
+  "scaling_path": "How this structure evolves as needs grow",
+  "alternative_consideration": "What would make you switch to a different service type"
+}`,
+  };
+
+  const architecturePrompt = `You are a role design architect designing a ${recommendedService} engagement.
+
+INTAKE DATA:
+${JSON.stringify(intakeData, null, 2)}
+
+DISCOVERY INSIGHTS:
+${JSON.stringify(discovery, null, 2)}
+
+SERVICE CLASSIFICATION:
+${JSON.stringify(serviceClassification.service_type_analysis, null, 2)}
+
+${serviceSpecificInstructions[recommendedService] || ""}
+
+Make every section specific and actionable. Avoid generic statements.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "You are a role architecture specialist." },
+      { role: "user", content: architecturePrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.5,
+    max_tokens: 3000,
+  });
+
+  return JSON.parse(completion.choices[0].message.content || "{}");
+}
+
+// ============================================================================
+// STAGE 3A: DETAILED JD GENERATION (For Dedicated VA or Core Unicorn VA)
+// ============================================================================
+
+async function generateDetailedJD(
+  openai: OpenAI,
+  role: any,
+  discovery: any,
+  intakeData: any
+) {
+  const jdPrompt = `You are writing a comprehensive job description for a VA role.
+
+ROLE OVERVIEW:
+${JSON.stringify(role, null, 2)}
+
+DISCOVERY CONTEXT:
+${JSON.stringify(discovery, null, 2)}
+
+CLIENT CONTEXT:
+${JSON.stringify(intakeData, null, 2)}
+
+Generate a detailed, actionable job description following this JSON schema:
+
+{
+  "title": "${role.title}",
+  "hours_per_week": ${role.hours_per_week},
+  
+  "mission_statement": "2-3 sentences: Why this role exists and what success looks like. Make it inspiring and clear.",
+  
+  "primary_outcome": "The single most important thing this role must deliver in 90 days (specific and measurable)",
+  
+  "core_outcomes": [
+    "4-6 specific, measurable outcomes for 90 days",
+    "Each should be concrete with success criteria",
+    "Example: 'Build 3 lead-generation funnels with documented workflows, achieving <2% form error rate and 15+ booked calls/month'",
+    "Tie each to the overall business goal"
+  ],
+  
+  "responsibilities": [
+    {
+      "category": "Category name (e.g., 'Workflow Automation')",
+      "details": [
+        "Detailed responsibility with the HOW, not just WHAT",
+        "Example: 'Design GHL multi-step workflows including form logic, conditional branching, webhook integrations, and calendar booking—with full QA documentation before launch'",
+        "Include frequency, tools, and output format"
+      ]
+    }
+  ],
+  
+  "skills_required": {
+    "technical": [
+      {
+        "skill": "Specific technical skill",
+        "proficiency": "beginner | intermediate | advanced",
+        "application": "How it's used in this role",
+        "example": "Concrete example of application"
+      }
+    ],
+    "soft": [
+      {
+        "skill": "Soft skill",
+        "why_critical": "Why it matters for this specific role",
+        "demonstration": "How you'd assess this in interview/trial"
+      }
+    ],
+    "domain": [
+      "Domain knowledge needed with context"
+    ]
+  },
+  
+  "tools": [
+    {
+      "tool": "Tool name",
+      "use_case": "Primary use in this role",
+      "proficiency": "How deep they need to know it",
+      "training_available": "Will client provide training? Y/N/Partial"
+    }
+  ],
+  
+  "kpis": [
+    {
+      "metric": "Specific KPI",
+      "target": "Target value (if applicable)",
+      "frequency": "How often measured",
+      "measurement_method": "How it's tracked/calculated",
+      "leading_or_lagging": "leading | lagging",
+      "instrumentation_needs": "What tools/setup needed to track this"
+    }
+  ],
+  
+  "personality_fit": [
+    {
+      "trait": "Specific personality trait",
+      "why_critical": "Why this matters for success in THIS role",
+      "anti_pattern": "What the opposite trait looks like (red flag)",
+      "example_scenario": "Situation where this trait is tested"
+    }
+  ],
+  
+  "sample_week": {
+    "Mon": {
+      "focus": "Primary focus/theme for Monday",
+      "activities": ["Specific activity 1", "Specific activity 2"],
+      "estimated_hours": "Hour breakdown"
+    },
+    "Tue": { "focus": "", "activities": [], "estimated_hours": "" },
+    "Wed": { "focus": "", "activities": [], "estimated_hours": "" },
+    "Thu": { "focus": "", "activities": [], "estimated_hours": "" },
+    "Fri": {
+      "focus": "Include weekly review/reporting",
+      "activities": [],
+      "estimated_hours": ""
+    }
+  },
+  
+  "communication_structure": {
+    "reporting_to": "Role or person",
+    "daily_updates": "Format and channel (e.g., 'Async Slack summary by 9am EST')",
+    "weekly_sync": "Format, duration, purpose",
+    "documentation_standards": "How work is documented",
+    "escalation_protocol": "When and how to raise issues",
+    "tools": ["Slack", "Loom", "ClickUp"]
+  },
+  
+  "timezone_requirements": {
+    "flexibility": "What's negotiable",
+    "critical_windows": "When real-time presence is essential",
+    "async_workflows": "What can be done fully async"
+  },
+  
+  "success_indicators": {
+    "30_days": ["What good looks like at 30 days"],
+    "60_days": ["What good looks like at 60 days"],
+    "90_days": ["What good looks like at 90 days - should match core outcomes"]
+  }
+}
+
+Make every section rich and specific. Avoid generic statements.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      {
+        role: "system",
+        content: "You are an expert job description writer.",
+      },
+      { role: "user", content: jdPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.6,
+    max_tokens: 3500,
+  });
+
+  return JSON.parse(completion.choices[0].message.content || "{}");
+}
+
+// ============================================================================
+// STAGE 3B: PROJECT SPECS GENERATOR (For Projects on Demand)
+// ============================================================================
+
+async function generateProjectSpecs(
+  openai: OpenAI,
+  projects: any[],
+  discovery: any,
+  intakeData: any
+) {
+  const projectPrompt = `You are creating detailed project specifications for a Projects on Demand engagement.
+
+PROJECTS:
+${JSON.stringify(projects, null, 2)}
+
+DISCOVERY CONTEXT:
+${JSON.stringify(discovery, null, 2)}
+
+INTAKE DATA:
+${JSON.stringify(intakeData, null, 2)}
+
+For each project, create comprehensive specifications. Respond with JSON:
+
+{
+  "projects": [
+    {
+      "project_name": "From input",
+      "overview": "2-3 sentence project summary",
+      "objectives": ["Specific goals this project achieves"],
+      "deliverables": [
+        {
+          "item": "Deliverable name",
+          "description": "Detailed description",
+          "acceptance_criteria": ["How we know it's done right"],
+          "file_format": "Expected output format"
+        }
+      ],
+      "scope": {
+        "in_scope": ["What IS included"],
+        "out_of_scope": ["What IS NOT included"],
+        "assumptions": ["What we're assuming about resources/access"]
+      },
+      "timeline": {
+        "estimated_hours": "Total hours",
+        "duration": "Calendar time",
+        "milestones": [
+          {
+            "milestone": "Checkpoint name",
+            "timing": "When it happens",
+            "deliverable": "What's delivered"
+          }
+        ]
+      },
+      "requirements": {
+        "from_client": ["What client must provide"],
+        "skills_needed": ["Skills for execution"],
+        "tools_needed": ["Tools required"]
+      },
+      "success_metrics": ["How we measure success"],
+      "risks": [
+        {
+          "risk": "Potential issue",
+          "mitigation": "How to prevent/handle it"
+        }
+      ]
+    }
+  ]
+}
+
+Make each project specification detailed enough to be executed independently.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "You are a project specification expert." },
+      { role: "user", content: projectPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.5,
+    max_tokens: 3000,
+  });
+
+  return JSON.parse(completion.choices[0].message.content || "{}");
+}
+
+// ============================================================================
+// STAGE 4: VALIDATION & RISK ANALYSIS (Service-Aware)
+// ============================================================================
+
+async function validateAndAnalyzeRisks(
+  openai: OpenAI,
+  architecture: any,
+  detailedSpecs: any,
+  discovery: any,
+  intakeData: any,
+  serviceClassification: any
+) {
+  const validationPrompt = `You are a quality assurance analyst reviewing a VA service design package.
+
+SERVICE TYPE: ${serviceClassification.service_type_analysis.recommended_service}
+
+ROLE ARCHITECTURE:
+${JSON.stringify(architecture, null, 2)}
+
+DETAILED SPECIFICATIONS:
+${JSON.stringify(detailedSpecs, null, 2)}
+
+DISCOVERY INSIGHTS:
+${JSON.stringify(discovery, null, 2)}
+
+INTAKE DATA:
+${JSON.stringify(intakeData, null, 2)}
+
+Perform a comprehensive validation and risk analysis. Respond with JSON:
+
+{
+  "consistency_checks": {
+    "hours_balance": {
+      "stated_hours": "Total weekly hours from intake",
+      "allocated_hours": "Sum of hours across roles/projects",
+      "issues": ["Any mismatches or concerns"]
+    },
+    
+    "tool_alignment": {
+      "tools_in_intake": ["From intake"],
+      "tools_in_specs": ["From specifications"],
+      "missing_from_specs": ["Tools needed but not listed"],
+      "not_in_intake": ["Tools in specs but not provided by client"],
+      "recommendations": ["What to clarify with client"]
+    },
+    
+    "outcome_mapping": {
+      "client_goal": "90-day outcome from intake",
+      "role_outcomes": ["Primary outcomes from specifications"],
+      "coverage": "What % of client goal is addressed",
+      "gaps": ["Aspects of client goal not covered"]
+    },
+    
+    "kpi_feasibility": [
+      {
+        "kpi": "KPI name",
+        "measurable": true,
+        "instrumentation_exists": false,
+        "issue": "If not measurable, what's missing",
+        "recommendation": "How to fix"
+      }
+    ]
+  },
+  
+  "risk_analysis": [
+    {
+      "risk": "Specific risk description",
+      "category": "scope | skill | tool | process | management",
+      "severity": "high | medium | low",
+      "likelihood": "high | medium | low",
+      "impact": "What happens if this risk materializes",
+      "mitigation": "How to reduce or manage this risk",
+      "early_warning_signs": ["Signals this risk is becoming real"]
+    }
+  ],
+  
+  "assumptions_to_validate": [
+    {
+      "assumption": "What we're assuming",
+      "criticality": "high | medium | low",
+      "validation_method": "How client should verify this",
+      "if_wrong": "What changes if this assumption is incorrect"
+    }
+  ],
+  
+  "red_flags": [
+    {
+      "flag": "Specific concern",
+      "evidence": "What in the data suggests this",
+      "recommendation": "What to do about it"
+    }
+  ],
+  
+  "quality_assessment": {
+    "specificity": "Are specifications specific enough? (1-10)",
+    "role_clarity": "Is the service structure crystal clear? (1-10)",
+    "outcome_alignment": "Does structure directly drive client goal? (1-10)",
+    "personality_depth": "Are personality traits specific and useful? (1-10)",
+    "kpi_quality": "Are KPIs measurable and meaningful? (1-10)",
+    "overall_confidence": "high | medium | low",
+    "areas_to_strengthen": ["What needs more depth"]
+  },
+  
+  "service_type_validation": {
+    "classification_appears_correct": true,
+    "concerns": ["Any concerns about the service type choice"],
+    "alternative_to_consider": "If concerns exist, what alternative service type"
+  },
+  
+  "alternative_considerations": [
+    "Other structures that might work",
+    "Scenarios where current design might fail",
+    "What would make you change this recommendation"
+  ]
+}
+
+Be brutally honest. This is the final QA check before showing to the client.`;
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "You are a quality assurance specialist." },
+      { role: "user", content: validationPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.3,
+    max_tokens: 2500,
+  });
+
+  return JSON.parse(completion.choices[0].message.content || "{}");
+}
+
+// ============================================================================
+// STAGE 5: CLIENT-FACING PACKAGE ASSEMBLY
+// ============================================================================
+
+function assembleClientPackage(
+  discovery: any,
+  architecture: any,
+  detailedSpecs: any,
+  validation: any,
+  intakeData: any,
+  serviceClassification: any
+) {
+  const recommendedService =
+    serviceClassification.service_type_analysis.recommended_service;
+
+  // Clean architecture: Remove team_support_areas for Dedicated VA
+  const cleanedArchitecture = { ...architecture };
+  if (recommendedService === "Dedicated VA" && cleanedArchitecture.team_support_areas !== undefined) {
+    delete cleanedArchitecture.team_support_areas;
   }
 
   return {
-    service: "Dedicated VA",
-    reason: "Single focused role with sufficient hours",
+    executive_summary: {
+      what_you_told_us: generateExecutiveSummary(discovery, intakeData),
+      service_recommendation: {
+        type: recommendedService,
+        confidence: serviceClassification.service_type_analysis.confidence,
+        reasoning: serviceClassification.service_type_analysis.decision_logic,
+        why_not_others: {
+          dedicated_va:
+            serviceClassification.service_type_analysis.service_fit_scores
+              .dedicated_va,
+          projects_on_demand:
+            serviceClassification.service_type_analysis.service_fit_scores
+              .projects_on_demand,
+          unicorn_va:
+            serviceClassification.service_type_analysis.service_fit_scores
+              .unicorn_va,
+        },
+      },
+      key_insights: discovery.task_analysis.implicit_needs.slice(0, 3),
+    },
+
+    service_structure: cleanedArchitecture,
+
+    detailed_specifications: detailedSpecs,
+
+    implementation_plan: {
+      immediate_next_steps: generateNextSteps(
+        validation,
+        discovery,
+        intakeData,
+        recommendedService
+      ),
+      onboarding_roadmap: generateOnboardingRoadmap(
+        detailedSpecs,
+        recommendedService
+      ),
+      success_milestones: generateMilestones(recommendedService, detailedSpecs),
+    },
+
+    risk_management: {
+      risks: validation.risk_analysis,
+      assumptions: validation.assumptions_to_validate,
+      red_flags: validation.red_flags,
+      monitoring_plan: generateMonitoringPlan(validation),
+    },
+
+    questions_for_you: [
+      ...discovery.context_gaps,
+      ...serviceClassification.service_type_analysis
+        .client_validation_questions,
+    ],
+
+    validation_report: {
+      consistency_checks: validation.consistency_checks,
+      quality_scores: validation.quality_assessment,
+      service_type_validation: validation.service_type_validation,
+    },
+
+    appendix: {
+      discovery_insights: discovery,
+      service_classification_details: serviceClassification,
+      measurement_recommendations: discovery.measurement_capability,
+    },
   };
 }
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function generateExecutiveSummary(discovery: any, intakeData: any) {
+  const context = discovery.business_context;
+  const tasks = discovery.task_analysis;
+
+  return {
+    company_stage: context.company_stage,
+    outcome_90d: intakeData.outcome_90d,
+    primary_bottleneck: context.primary_bottleneck,
+    workflow_analysis: `Our analysis reveals ${tasks.task_clusters.length} distinct workflow clusters across ${intakeData.tasks_top5.length} key tasks, with hidden complexity around ${context.hidden_complexity}.`,
+    sop_status: discovery.sop_insights
+      ? {
+          has_sops: true,
+          pain_points: discovery.sop_insights.pain_points || [],
+          documentation_gaps: discovery.sop_insights.documentation_gaps || [],
+          summary: `Based on their SOP documentation, we've identified ${discovery.sop_insights.pain_points.length} process pain points and ${discovery.sop_insights.documentation_gaps.length} documentation gaps that need addressing.`,
+        }
+      : {
+          has_sops: false,
+          pain_points: [],
+          documentation_gaps: [],
+          summary:
+            "No existing SOPs were provided, suggesting documentation will be a Day 1 priority.",
+        },
+    role_recommendation: `The service structure we're recommending is designed specifically to unblock ${context.primary_bottleneck} while building sustainable systems for ${context.growth_indicators}.`,
+  };
+}
+
+function generateNextSteps(
+  validation: any,
+  discovery: any,
+  intakeData: any,
+  serviceType: string
+) {
+  const steps = [
+    {
+      step: "Review and approve service structure",
+      owner: "Client",
+      timeline: "Next 2 days",
+      output: `Confirmed ${serviceType} engagement`,
+    },
+    {
+      step: "Answer clarifying questions",
+      owner: "Client",
+      timeline: "Next 3 days",
+      output: discovery.context_gaps.length + " questions answered",
+    },
+  ];
+
+  if (
+    validation.consistency_checks.tool_alignment.missing_from_specs &&
+    validation.consistency_checks.tool_alignment.missing_from_specs.length > 0
+  ) {
+    steps.push({
+      step: "Clarify tool access and training",
+      owner: "Client",
+      timeline: "Before engagement starts",
+      output:
+        "Confirmed: " +
+        validation.consistency_checks.tool_alignment.missing_from_specs.join(
+          ", "
+        ),
+    });
+  }
+
+  if (
+    discovery.sop_insights &&
+    discovery.sop_insights.documentation_gaps.length > 0
+  ) {
+    steps.push({
+      step: "Document critical workflows",
+      owner: "Client",
+      timeline: "Week 1 of engagement",
+      output:
+        discovery.sop_insights.documentation_gaps.slice(0, 3).join(", ") +
+        " documented",
+    });
+  }
+
+  if (serviceType === "Dedicated VA" || serviceType === "Unicorn VA Service") {
+    steps.push(
+      {
+        step: "Post role(s) and begin sourcing",
+        owner: "Level 9 Virtual",
+        timeline: "Within 48h of approval",
+        output: "Active candidate pipeline",
+      },
+      {
+        step: "Set up KPI tracking infrastructure",
+        owner: "Client + VA",
+        timeline: "Week 1 of onboarding",
+        output: "Dashboard/tracking system live",
+      }
+    );
+  } else if (serviceType === "Projects on Demand") {
+    steps.push(
+      {
+        step: "Prioritize and schedule projects",
+        owner: "Client + Level 9 Virtual",
+        timeline: "Within 48h of approval",
+        output: "Project execution timeline confirmed",
+      },
+      {
+        step: "Assign specialist resources",
+        owner: "Level 9 Virtual",
+        timeline: "Before each project kickoff",
+        output: "Project teams confirmed",
+      }
+    );
+  }
+
+  return steps;
+}
+
+function generateOnboardingRoadmap(detailedSpecs: any, serviceType: string) {
+  const roadmap: any = {
+    week_1: {},
+    week_2: {},
+    week_3_4: {},
+  };
+
+  if (serviceType === "Dedicated VA") {
+    const jd = detailedSpecs;
+    const title = jd.title;
+
+    roadmap.week_1[title] = [
+      `Grant access to: ${jd.tools.map((t: any) => t.tool).join(", ")}`,
+      `Share SOPs for: ${jd.responsibilities[0]?.category || "core workflows"}`,
+      `Complete setup: ${jd.communication_structure.tools.join(", ")}`,
+    ];
+
+    roadmap.week_2[title] = [
+      `Shadow existing workflows and document understanding`,
+      `First hands-on task: ${
+        jd.responsibilities[0]?.details?.[0]?.split("—")[0] || "Initial project"
+      }`,
+      `Establish ${jd.communication_structure.weekly_sync} cadence`,
+    ];
+
+    roadmap.week_3_4[title] = [
+      `Take ownership of: ${jd.primary_outcome}`,
+      `Begin tracking: ${jd.kpis
+        .slice(0, 2)
+        .map((k: any) => k.metric)
+        .join(", ")}`,
+      `30-day check-in against success indicators`,
+    ];
+  } else if (serviceType === "Unicorn VA Service") {
+    const coreJd = detailedSpecs.core_va_jd;
+    const title = coreJd.title;
+
+    roadmap.week_1[title] = [
+      `Grant access to: ${coreJd.tools.map((t: any) => t.tool).join(", ")}`,
+      `Introduce team support structure and request process`,
+      `Complete setup: ${coreJd.communication_structure.tools.join(", ")}`,
+    ];
+
+    roadmap.week_2[title] = [
+      `Shadow core workflows`,
+      `First hands-on task: ${
+        coreJd.responsibilities[0]?.details?.[0]?.split("—")[0] ||
+        "Initial project"
+      }`,
+      `Submit first team support request for specialized task`,
+    ];
+
+    roadmap.week_3_4[title] = [
+      `Take ownership of core recurring work`,
+      `Establish rhythm with team specialists`,
+      `30-day check-in on core outcomes and team utilization`,
+    ];
+  } else if (serviceType === "Projects on Demand") {
+    roadmap.project_kickoff = {
+      "All Projects": [
+        "Confirm project scope and deliverables with client",
+        "Verify access to required tools and resources",
+        "Establish communication protocol and milestone review schedule",
+      ],
+    };
+
+    roadmap.execution_phase = {
+      "All Projects": [
+        "Regular progress updates at defined milestones",
+        "Client review and feedback on deliverables",
+        "Adjust timeline if dependencies surface",
+      ],
+    };
+
+    roadmap.completion = {
+      "All Projects": [
+        "Final deliverable submission with documentation",
+        "Client acceptance and sign-off",
+        "Post-project review and lessons learned",
+      ],
+    };
+  }
+
+  return roadmap;
+}
+
+function generateMilestones(serviceType: string, specs: any) {
+  if (serviceType === "Dedicated VA") {
+    return {
+      week_2: "Initial setup and tool access complete",
+      week_4: "First workflow/deliverable shipped",
+      week_8: "Independent execution on core responsibilities",
+      week_12: "90-day outcomes on track",
+    };
+  }
+
+  if (serviceType === "Projects on Demand") {
+    const projects = specs.projects || [];
+    const milestones: any = {};
+
+    projects.forEach((project: any, index: number) => {
+      milestones[
+        `project_${index + 1}_kickoff`
+      ] = `${project.project_name}: Scope confirmed, resources allocated`;
+      milestones[
+        `project_${index + 1}_completion`
+      ] = `${project.project_name}: All deliverables accepted`;
+    });
+
+    return milestones;
+  }
+
+  if (serviceType === "Unicorn VA Service") {
+    return {
+      week_2: "Core VA onboarded, team access established",
+      week_4: "First core workflow delivered + first team request completed",
+      week_8: "Core VA independent, team support rhythm established",
+      week_12: "90-day outcomes on track with balanced VA/team utilization",
+    };
+  }
+
+  return {};
+}
+
+function generateMonitoringPlan(validation: any) {
+  const highRisks = validation.risk_analysis
+    .filter((r: any) => r.severity === "high")
+    .map((r: any) => ({
+      risk: r.risk,
+      check_in: "Weekly during first month",
+      watch_for: r.early_warning_signs,
+    }));
+
+  return {
+    high_priority_risks: highRisks,
+    quality_checks: [
+      {
+        checkpoint: "Week 2",
+        assess: [
+          "Are KPIs being tracked?",
+          "Is communication rhythm working?",
+          "Any tool access issues?",
+        ],
+      },
+      {
+        checkpoint: "Week 4",
+        assess: [
+          "Is work progressing independently?",
+          "Are outcomes on track?",
+          "Any scope creep?",
+        ],
+      },
+      {
+        checkpoint: "Week 8",
+        assess: ["Will we hit 90-day targets?", "Should structure adjust?"],
+      },
+    ],
+    adjustment_triggers: validation.assumptions_to_validate
+      .filter((a: any) => a.criticality === "high")
+      .map((a: any) => ({
+        trigger: a.assumption,
+        action: a.if_wrong,
+      })),
+  };
+}
+
+// ============================================================================
+// MAIN ROUTE HANDLER
+// ============================================================================
 
 export async function POST(request: Request) {
   try {
@@ -575,6 +1379,7 @@ export async function POST(request: Request) {
     let intake_json: any = null;
     let sopFile: File | null = null;
 
+    // Parse request
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const rawIntake = formData.get("intake_json");
@@ -588,6 +1393,7 @@ export async function POST(request: Request) {
 
       try {
         intake_json = JSON.parse(rawIntake);
+        console.log("Intake Data: ", intake_json);
       } catch (parseError) {
         console.error("Failed to parse intake_json:", parseError);
         return NextResponse.json(
@@ -603,11 +1409,13 @@ export async function POST(request: Request) {
     } else {
       const body = await request.json();
       intake_json = body?.intake_json;
+      console.log("Received JSON body.", intake_json);
+      console.log("Intake Data: ", intake_json);
     }
 
+    // Normalize intake data
     const normalizedTasks = normalizeTasks(intake_json?.tasks_top5);
 
-    // Validate required fields
     if (!intake_json?.brand?.name || normalizedTasks.length === 0) {
       return NextResponse.json(
         { error: "Invalid intake data" },
@@ -621,10 +1429,6 @@ export async function POST(request: Request) {
     );
     const weeklyHours = Number(intake_json?.weekly_hours) || 0;
     const clientFacing = Boolean(intake_json?.client_facing);
-    const outcome =
-      typeof intake_json?.outcome_90d === "string"
-        ? intake_json.outcome_90d
-        : "";
 
     const augmentedIntakeJson = {
       ...intake_json,
@@ -639,9 +1443,10 @@ export async function POST(request: Request) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    let sopInsights: Record<string, unknown> | null = null;
-    let sopExcerpt: string | null = null;
-    let sopUsed = false;
+    // ========================================================================
+    // PROCESS SOP (if provided)
+    // ========================================================================
+    let sopText: string | null = null;
 
     if (sopFile) {
       console.log(
@@ -652,16 +1457,13 @@ export async function POST(request: Request) {
       );
 
       const validation = validateSopFile(sopFile);
-      console.log("SOP file validation result:", validation);
-
       if (!validation.valid) {
         console.error("SOP validation failed:", validation.error);
         return NextResponse.json({ error: validation.error }, { status: 400 });
       }
 
-      let sopText: string | null = null;
       try {
-        console.log("Attempting to extract text from SOP...");
+        console.log("Extracting text from SOP...");
         sopText = await extractTextFromSop(sopFile);
         console.log("Successfully extracted text, length:", sopText?.length);
       } catch (extractionError) {
@@ -671,306 +1473,238 @@ export async function POST(request: Request) {
             error:
               extractionError instanceof Error
                 ? extractionError.message
-                : "Failed to parse the SOP file. Please upload a valid document.",
+                : "Failed to parse the SOP file.",
           },
           { status: 400 }
         );
       }
-
-      if (sopText && isSopRelevant(sopText)) {
-        const truncatedForSummary = truncateForPrompt(
-          sopText,
-          SOP_SUMMARY_CHAR_LIMIT
-        );
-
-        try {
-          const summaryCompletion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are an assistant that reads SOP documents and extracts actionable insights. Respond with JSON containing up to 6 concise bullet points per array. Properties: processes[], workflows[], responsibilities[], tools_or_systems[], additional_notes[]. Use empty arrays when information is absent.",
-              },
-              {
-                role: "user",
-                content: `SOP DOCUMENT:\n${truncatedForSummary}`,
-              },
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.2,
-            max_tokens: 700,
-          });
-
-          const summaryContent = summaryCompletion.choices[0].message.content;
-          if (summaryContent) {
-            const parsedSummary = JSON.parse(summaryContent);
-            const hasMeaningfulData = Object.values(parsedSummary).some(
-              (value) => {
-                if (Array.isArray(value)) {
-                  return value.length > 0;
-                }
-                if (typeof value === "string") {
-                  return value.trim().length > 0;
-                }
-                return Boolean(value);
-              }
-            );
-
-            if (hasMeaningfulData) {
-              sopInsights = parsedSummary;
-              sopExcerpt = truncateForPrompt(sopText, SOP_EXCERPT_CHAR_LIMIT);
-              sopUsed = true;
-            }
-          }
-        } catch (summaryError) {
-          console.warn("SOP summary error:", summaryError);
-        }
-      }
     }
 
-    const sopContextPrompt = sopInsights
-      ? `SOP INSIGHTS (incorporate these processes, workflows, and responsibilities into the JD where relevant):
-${JSON.stringify(sopInsights, null, 2)}
+    // ========================================================================
+    // MULTI-STAGE ANALYSIS PIPELINE
+    // ========================================================================
 
-SOP EXCERPT (truncated for reference):
-${sopExcerpt ?? ""}`
-      : sopFile
-      ? "An SOP file was uploaded but did not contain actionable process information. Proceed using the intake data without SOP augmentation."
-      : "No SOP file was provided. Rely solely on intake data.";
-
-    // Classification engine
-    const crafts = classifyTasks(normalizedTasks, normalizedTools, outcome);
-
-    const splitLogic = determineSplitLogic(crafts, weeklyHours, clientFacing);
-
-    const serviceMapping = determineService(
-      crafts,
-      weeklyHours,
-      splitLogic.shouldSplit
+    console.log("Stage 1: Running deep discovery...");
+    const discovery = await runDeepDiscovery(
+      openai,
+      augmentedIntakeJson,
+      sopText
     );
 
-    // Build comprehensive system prompt
-    const systemPrompt = `You are Job Description Builder AI for Level 9 Virtual. Your job is to create comprehensive, in-depth job descriptions that provide complete clarity for hiring and onboarding.
+    console.log("Stage 1.5: Classifying service type...");
+    const serviceClassification = await classifyServiceType(
+      openai,
+      augmentedIntakeJson,
+      discovery
+    );
 
-CORE MISSION:
-(1) Ingest intake JSON + classification results
-(2) Identify the client's primary outcome and the single highest-leverage role
-(3) Design roles that most directly drive the client's stated goal
-(4) Map each role to the most appropriate L9V service (Dedicated VA, Unicorn VA, or POD)
+    const recommendedService =
+      serviceClassification.service_type_analysis.recommended_service;
+    console.log("Stage 2: Designing role architecture for", recommendedService);
+    const architecture = await designRoleArchitecture(
+      openai,
+      augmentedIntakeJson,
+      discovery,
+      serviceClassification
+    );
 
-PRINCIPLES:
-- Outcomes over duties: design roles that most directly drive the client's stated goal
-- Role clarity: one role = one dominant craft
-- Personality fit matters: ensure behavioral profile matches the craft
-- Tool reality: only include tools the client uses
-- Provide rich, actionable detail in every section
+    console.log("Stage 3: Generating detailed specifications...");
+    let detailedSpecs;
 
-CLASSIFICATION RESULTS:
-${JSON.stringify({ crafts, splitLogic, serviceMapping }, null, 2)}
-
-SOP CONTEXT:
-${sopContextPrompt}
-
-INTAKE DATA:
-${JSON.stringify(augmentedIntakeJson, null, 2)}
-
-KPI LIBRARY (use these as defaults, customize to the specific role):
-${JSON.stringify(KPI_LIBRARY, null, 2)}
-
-PERSONALITY PROFILES (use these as templates, customize to client needs):
-${JSON.stringify(PERSONALITY_PROFILES, null, 2)}
-
-YOU MUST RESPOND WITH A COMPLETE JSON OBJECT CONTAINING ALL OF THE FOLLOWING:
-
-{
-  "what_you_told_us": "A comprehensive 2-3 paragraph summary synthesizing the client's business goal, key tasks, constraints (hours, timezone, client-facing needs), tools in use, and the primary outcome they want to achieve in 90 days. Make this narrative and insightful.",
-  
-  "roles": [
-    {
-      "title": "Specific role name (e.g., 'GHL Implementer', 'Executive Assistant')",
-      "family": "The craft family (Tech/Automation, Creative/Build, Growth/Revenue, Business/Operations)",
-      "service": "Dedicated VA | Unicorn VA | POD",
-      "hours_per_week": 20,
-      "client_facing": true/false,
-      "purpose": "A clear 2-sentence mission statement explaining why this role exists and what it unlocks for the business",
-      
-      "core_outcomes": [
-        "4-6 specific, measurable outcomes this role will deliver in 90 days",
-        "Each should be concrete and tied to business impact",
-        "Example: 'Launch 2 new lead-generation funnels with <2% form error rate'",
-        "Example: 'Increase booked calls by 15 per month through automation optimization'"
-      ],
-      
-      "responsibilities": [
-        "6 detailed responsibilities, each 1-2 sentences",
-        "Include the 'how' not just the 'what'",
-        "Example: 'Build and QA multi-step GHL workflows including form integrations, conditional logic, and calendar booking'",
-        "Example: 'Conduct weekly A/B tests on funnel conversion points and document findings in Sheets'"
-      ],
-      
-      "skills": [
-        "6-8 specific skills with context",
-        "Example: 'GHL workflow builder (intermediate: triggers, filters, webhooks)'",
-        "Example: 'Clear async communication via Loom and Slack'",
-        "Not just tool names - include proficiency level or application context"
-      ],
-      
-      "tools": [
-        "List of 4-8 tools the client uses",
-        "Include tool AND primary use case",
-        "Example: 'GHL (workflows, pipelines, forms)'",
-        "Example: 'Google Sheets (KPI tracking, test logs)'"
-      ],
-      
-      "kpis": [
-        "3-5 specific KPIs with targets where possible",
-        "Mix leading and lagging indicators",
-        "Example: '2 funnel launches per month'",
-        "Example: 'Form error rate <2%'",
-        "Example: '+15 booked calls per month (30-day rolling average)'"
-      ],
-      
-      "personality": [
-        "4-5 personality traits that are CRITICAL for this role",
-        "Be specific to the craft and client context",
-        "Example: 'Systematic and detail-safe—catches edge cases before they become problems'",
-        "Example: 'Comfortable with ambiguity in early stages, then locks into process'",
-        "Not generic—tailor to whether role is creative, analytical, client-facing, etc."
-      ],
-      
-      "reporting_to": "The role or person this VA reports to (e.g., 'Marketing Director', 'Founder', 'Operations Lead')",
-      
-      "sample_week": {
-        "Mon": "Detailed description of Monday activities (2-3 sentences). Example: 'Review weekend form submissions and fix any errors. Plan week's automation builds in ClickUp. Sync with Marketing Lead on funnel priorities.'",
-        "Tue": "Detailed Tuesday activities",
-        "Wed": "Detailed Wednesday activities",
-        "Thu": "Detailed Thursday activities",
-        "Fri": "Detailed Friday activities (include reporting/review rituals)"
-      ],
-      
-      "overlap_requirements": "Specific guidance on timezone overlap needs. Example: '2-3 hours daily overlap with EST for standup and real-time troubleshooting. Async-first otherwise.'",
-      
-      "communication_norms": "How this role communicates. Example: 'Daily async updates in Slack. Weekly Loom for KPI review. Bi-weekly 30-min sync for planning.'"
+    if (recommendedService === "Dedicated VA") {
+      detailedSpecs = await generateDetailedJD(
+        openai,
+        architecture.dedicated_va_role,
+        discovery,
+        augmentedIntakeJson
+      );
+    } else if (recommendedService === "Projects on Demand") {
+      detailedSpecs = await generateProjectSpecs(
+        openai,
+        architecture.projects,
+        discovery,
+        augmentedIntakeJson
+      );
+    } else if (recommendedService === "Unicorn VA Service") {
+      detailedSpecs = {
+        core_va_jd: await generateDetailedJD(
+          openai,
+          architecture.core_va_role,
+          discovery,
+          augmentedIntakeJson
+        ),
+        team_support_specs: architecture.team_support_areas,
+      };
     }
-  ],
-  
-  "split_table": [
-    {
-      "role": "Primary role name",
-      "purpose": "Brief 1-sentence purpose",
-      "core_outcomes": ["outcome 1", "outcome 2"],
-      "hrs": 20,
-      "service": "Dedicated | Unicorn | POD"
+
+    console.log("Stage 4: Validating and analyzing risks...");
+    const validation = await validateAndAnalyzeRisks(
+      openai,
+      architecture,
+      detailedSpecs,
+      discovery,
+      augmentedIntakeJson,
+      serviceClassification
+    );
+
+    console.log("Stage 5: Assembling client package...");
+    const clientPackage = assembleClientPackage(
+      discovery,
+      architecture,
+      detailedSpecs,
+      validation,
+      augmentedIntakeJson,
+      serviceClassification
+    );
+
+    // ========================================================================
+    // BUILD RESPONSE
+    // ========================================================================
+
+    const preview: any = {
+      summary: clientPackage.executive_summary.what_you_told_us,
+      primary_outcome: augmentedIntakeJson.outcome_90d,
+
+      service_type: recommendedService,
+      service_confidence:
+        serviceClassification.service_type_analysis.confidence,
+      service_reasoning:
+        serviceClassification.service_type_analysis.decision_logic,
+
+      confidence: validation.quality_assessment.overall_confidence,
+      key_risks: validation.risk_analysis
+        .filter((r: any) => r.severity === "high")
+        .slice(0, 3)
+        .map((r: any) => r.risk),
+      critical_questions: [
+        ...discovery.context_gaps.slice(0, 2).map((q: any) => q.question),
+        ...serviceClassification.service_type_analysis.client_validation_questions
+          .slice(0, 1)
+          .map((q: any) => q.question),
+      ],
+    };
+
+    if (recommendedService === "Dedicated VA") {
+      preview.role_title = architecture.dedicated_va_role.title;
+      preview.hours_per_week = architecture.dedicated_va_role.hours_per_week;
+    } else if (recommendedService === "Projects on Demand") {
+      preview.project_count = architecture.projects.length;
+      preview.total_hours = architecture.total_investment.hours;
+      preview.estimated_timeline = architecture.total_investment.timeline;
+    } else if (recommendedService === "Unicorn VA Service") {
+      preview.core_va_title = architecture.core_va_role.title;
+      preview.core_va_hours = architecture.core_va_role.hours_per_week;
+      preview.team_support_areas = architecture.team_support_areas.length;
     }
-  ],
-  
-  "service_recommendation": {
-    "best_fit": "Dedicated VA | Unicorn VA | POD | Dedicated + POD",
-    "why": "2-3 paragraph explanation of why this service mapping is optimal. Include: (1) workload match, (2) craft adjacency or conflicts, (3) cost-efficiency, (4) trade-offs vs alternatives",
-    "cost_framing": "Brief context on cost expectations WITHOUT specific prices. Example: 'Dedicated VAs typically range from $X-Y monthly depending on seniority. POD work is billed project-based.'",
-    "next_steps": [
-      "3-5 concrete next steps",
-      "Example: 'Approve this JD and role split'",
-      "Example: 'Schedule kickoff call to review KPI tracking setup'",
-      "Example: 'Prepare SOP for top 2 workflows to accelerate onboarding'"
-    ]
-  },
-  
-  "onboarding_2w": {
-    "week_1": [
-      "4-6 detailed onboarding actions for Week 1",
-      "Example: 'Grant GHL admin access + walkthrough of current funnel architecture'",
-      "Example: 'Share top 3 SOPs and have VA summarize understanding via Loom'",
-      "Example: 'Assign first dry-run task: clone existing funnel and modify thank-you page'"
-    ],
-    "week_2": [
-      "4-6 detailed onboarding actions for Week 2",
-      "Example: 'Launch first live automation with QA checklist'",
-      "Example: 'Establish weekly KPI reporting cadence and review format'",
-      "Example: 'Conduct 30-min retro: what's clear, what needs more context'"
-    ]
-  },
-  
-  "risks": [
-    "3-5 specific risks or tradeoffs with this role design",
-    "Example: 'If design tasks exceed 8h/week, the POD model will bottleneck—consider dedicated designer at that point'",
-    "Example: 'GHL Implementer has limited client-facing experience—best paired with internal point person for client comms'",
-    "Be honest and anticipatory"
-  ],
-  
-  "assumptions": [
-    "3-5 assumptions you're making that the client should validate",
-    "Example: 'Assuming current GHL workflows are documented or VA will have access to walk through them'",
-    "Example: 'Assuming design backlog averages 6-8 hours per week; if higher, role split needed'",
-    "Example: 'Assuming client has existing SOPs or is willing to create them in Week 1'"
-  ]
+
+    // Build final response
+    const response = {
+      preview,
+      full_package: clientPackage,
+      metadata: {
+        stages_completed: [
+          "Discovery",
+          "Service Classification",
+          "Architecture",
+          "Specification Generation",
+          "Validation",
+        ],
+        service_type: recommendedService,
+        service_classification_scores:
+          serviceClassification.service_type_analysis.service_fit_scores,
+        sop_processed: Boolean(sopText),
+        discovery_insights_count: discovery.task_analysis.task_clusters.length,
+        risks_identified: validation.risk_analysis.length,
+        quality_scores: validation.quality_assessment,
+      },
+    };
+
+    // Clean team_support_areas for Dedicated VA before returning
+    const cleanedResponse = cleanTeamSupportAreas(response);
+
+    return NextResponse.json(cleanedResponse);
+  } catch (error) {
+    console.error("JD Analysis error:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to analyze job description",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
 }
 
-CRITICAL REQUIREMENTS:
-- Every field must be populated with rich, detailed, actionable content
-- No placeholders or generic statements
-- Tailor everything to the specific client context from intake_json
-- Use the classification results to inform role design, but write for humans
-- Make this comprehensive enough that a hiring manager could use it immediately
-- Sample week should read like a real week, with specific activities
-- KPIs should be measurable and tied to the 90-day outcome
-- Personality traits should differentiate good-fit from poor-fit candidates
+// ============================================================================
+// OPTIONAL: REFINEMENT ENDPOINT (For iterative improvements)
+// ============================================================================
 
-Respond ONLY with the complete JSON object. No markdown, no explanations outside the JSON.`;
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { package_id, feedback, refinement_areas, service_override } = body;
+
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const refinementPrompt = `The client has reviewed the service design and provided feedback.
+
+ORIGINAL PACKAGE:
+${JSON.stringify(body.original_package, null, 2)}
+
+CLIENT FEEDBACK:
+${feedback}
+
+AREAS TO REFINE:
+${JSON.stringify(refinement_areas, null, 2)}
+
+${
+  service_override
+    ? `CLIENT REQUESTS SERVICE TYPE OVERRIDE TO: ${service_override}`
+    : ""
+}
+
+Generate an updated version addressing their concerns. Respond with the same JSON structure as the original package, but with refinements in the specified areas.
+
+Focus on:
+1. Addressing specific feedback points
+2. Maintaining consistency with unchanged sections
+3. Providing rationale for changes made
+${
+  service_override
+    ? "4. Redesigning for the requested service type while noting any concerns"
+    : ""
+}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [
-        { role: "system", content: systemPrompt },
         {
-          role: "user",
+          role: "system",
           content:
-            "Generate the complete, in-depth job description analysis based on the intake data and classification results provided. Ensure every section is comprehensive and actionable.",
+            "You are refining a VA service package based on client feedback.",
         },
+        { role: "user", content: refinementPrompt },
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 4000, // Increased for longer responses
+      temperature: 0.5,
+      max_tokens: 3000,
     });
 
-    const aiAnalysis = JSON.parse(
+    const refinedPackage = JSON.parse(
       completion.choices[0].message.content || "{}"
     );
 
-    // Build comprehensive preview
-    const preview = {
-      summary: aiAnalysis.what_you_told_us,
-      primary_outcome: augmentedIntakeJson.outcome_90d,
-      recommended_role: aiAnalysis.roles?.[0]?.title || "Unknown",
-      role_purpose: aiAnalysis.roles?.[0]?.purpose || "",
-      service_mapping: serviceMapping.service,
-      weekly_hours:
-        aiAnalysis.roles?.[0]?.hours_per_week ||
-        augmentedIntakeJson.weekly_hours,
-      client_facing:
-        aiAnalysis.roles?.[0]?.client_facing ??
-        augmentedIntakeJson.client_facing,
-      core_outcomes: aiAnalysis.roles?.[0]?.core_outcomes || [],
-      kpis: aiAnalysis.roles?.[0]?.kpis || [],
-      key_tools: aiAnalysis.roles?.[0]?.tools?.slice(0, 5) || [],
-      risks: aiAnalysis.risks || [],
-    };
-
     return NextResponse.json({
-      preview,
-      ai_analysis: aiAnalysis,
-      classification: {
-        crafts,
-        split_logic: splitLogic,
-        service_mapping: serviceMapping,
-      },
-      sop_context_used: sopUsed,
+      refined_package: refinedPackage,
+      changes_summary: "Package refined based on client feedback",
+      iteration: (body.iteration || 0) + 1,
     });
   } catch (error) {
-    console.error("JD Analysis error:", error);
+    console.error("Refinement error:", error);
     return NextResponse.json(
-      { error: "Failed to analyze job description" },
+      { error: "Failed to refine package" },
       { status: 500 }
     );
   }

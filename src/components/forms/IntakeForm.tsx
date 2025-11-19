@@ -13,19 +13,15 @@ interface IntakeFormData {
     outcome90Day: string;
     weeklyHours: string;
     timezone: string;
-    dailyOverlap: string;
     clientFacing: string;
     tools: string;
-    englishLevel: string;
-    budgetBand: string;
+    englishLevel: string,
     requirements: string[];
     existingSOPs: string;
-    examplesURL: string;
     reportingExpectations: string;
     managementStyle: string;
     securityNeeds: string;
     dealBreakers: string;
-    roleSplit: string;
     niceToHaveSkills: string;
 }
 
@@ -55,19 +51,15 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         outcome90Day: "",
         weeklyHours: "40",
         timezone: "",
-        dailyOverlap: "",
         clientFacing: "Yes",
         tools: "",
         englishLevel: "Good",
-        budgetBand: "Standard",
         requirements: ["", "", ""],
         existingSOPs: "No",
-        examplesURL: "",
         reportingExpectations: "",
         managementStyle: "Async",
         securityNeeds: "",
         dealBreakers: "",
-        roleSplit: "No",
         niceToHaveSkills: "",
     });
 
@@ -87,7 +79,7 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         { id: 0, title: "Company Info", required: ["companyName"] },
         { id: 1, title: "Business Goals", required: ["businessGoal", "outcome90Day"] },
         { id: 2, title: "Key Tasks", required: ["tasks"] },
-        { id: 3, title: "Work Details", required: ["weeklyHours", "dailyOverlap", "timezone", "clientFacing"] },
+        { id: 3, title: "Work Details", required: ["weeklyHours", "timezone", "clientFacing"] },
         { id: 4, title: "Requirements", required: ["requirements"] },
         { id: 5, title: "Tools & Skills", required: [] },
         { id: 6, title: "Additional Details - Process", required: [] },
@@ -105,7 +97,8 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                     return false;
                 }
             } else if (field === "requirements") {
-                if (formData.requirements.some(req => !req.trim())) {
+                const requiredRequirements = formData.requirements.slice(0, 3);
+                if (requiredRequirements.some(req => !req.trim())) {
                     return false;
                 }
             } else {
@@ -181,6 +174,10 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
         handleInputChange("requirements", updatedRequirements);
     };
 
+    const handleAddRequirement = () => {
+        handleInputChange("requirements", [...formData.requirements, ""]);
+    };
+
     const handleSOPFileChange = (file: File | null) => {
         if (!file) {
             setSopFile(null);
@@ -225,19 +222,15 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
             outcome90Day: "",
             weeklyHours: "40",
             timezone: "",
-            dailyOverlap: "",
             clientFacing: "Yes",
             tools: "",
             englishLevel: "Good",
-            budgetBand: "Standard",
             requirements: ["", "", ""],
             existingSOPs: "No",
-            examplesURL: "",
             reportingExpectations: "",
             managementStyle: "Async",
             securityNeeds: "",
             dealBreakers: "",
-            roleSplit: "No",
             niceToHaveSkills: "",
         };
 
@@ -285,25 +278,22 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                 tasks_top5: formData.tasks.filter(task => task.trim()).slice(0, 5),
                 requirements: formData.requirements.filter(req => req.trim()),
                 weekly_hours: parseInt(formData.weeklyHours, 10) || 0,
-                daily_overlap_hours: Number(formData.dailyOverlap) || 0,
                 timezone: formData.timezone,
                 client_facing: formData.clientFacing === "Yes",
                 tools: toolsArray,
                 tools_raw: formData.tools,
                 english_level: formData.englishLevel,
-                budget_band: formData.budgetBand,
                 management_style: formData.managementStyle,
                 reporting_expectations: formData.reportingExpectations,
                 security_needs: formData.securityNeeds,
                 deal_breakers: formData.dealBreakers,
-                role_split: formData.roleSplit,
                 nice_to_have_skills: formData.niceToHaveSkills,
                 existing_sops: formData.existingSOPs === "Yes",
-                examples_url: formData.examplesURL,
                 sop_filename: sopFile?.name ?? null,
             };
 
             const payload = new FormData();
+            console.log("Payload: ", payload)
             payload.append("intake_json", JSON.stringify(intakePayload));
 
             if (sopFile) {
@@ -546,12 +536,15 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                         <div>
                                             <label className={labelClasses}>Website</label>
                                             <input
-                                                type="text"
+                                                type="url"
                                                 placeholder="https://example.com or 'none yet'"
                                                 value={formData.website}
                                                 onChange={(e) => handleInputChange("website", e.target.value)}
                                                 className={inputClasses}
+                                                pattern="https?://.*"
+                                                title="Please enter a valid URL starting with http:// or https://"
                                             />
+                                            <p className="text-sm text-zinc-400 dark:text-white mt-2">Please enter a valid URL, or type 'none yet' if you don't have a website.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -570,12 +563,11 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                                 value={formData.businessGoal}
                                                 onChange={(v) => handleInputChange("businessGoal", v)}
                                                 options={[
-                                                    { label: "More leads", value: "More leads" },
-                                                    { label: "More booked calls", value: "More booked calls" },
-                                                    { label: "More closed deals", value: "More closed deals" },
-                                                    { label: "Faster delivery", value: "Faster delivery" },
-                                                    { label: "Better retention", value: "Better retention" },
-                                                    { label: "Founder time back", value: "Founder time back" },
+                                                    { label: "Growth & Scale", value: "Growth & Scale" },
+                                                    { label: "Efficiency & Optimization", value: "Efficiency & Optimization" },
+                                                    { label: "Brand & Market Position", value: "Brand & Market Position" },
+                                                    { label: " Customer Experience & Retention", value: "Customer Experience & Retention" },
+                                                    { label: "Product & Innovation", value: "Product & Innovation" },
                                                 ]}
                                                 placeholder="Select primary goal"
                                             />
@@ -609,19 +601,30 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                                     {index === 3 ? "Additional Tasks" : `Task ${index + 1}`}{" "}
                                                     {index < 3 && <span className="text-red-500">*</span>}
                                                 </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder={`e.g., ${index === 0
-                                                        ? "Manage social media content"
-                                                        : index === 1
-                                                            ? "Respond to customer inquiries"
-                                                            : "Create weekly reports"
-                                                        }`}
-                                                    value={task}
-                                                    onChange={(e) => handleTaskChange(index, e.target.value)}
-                                                    className={inputClasses}
-                                                    required={index < 3}
-                                                />
+
+                                                {index === 3 ? (
+                                                    <textarea
+                                                        placeholder="e.g., Ongoing admin tasks, SOP updates, ad-hoc projects"
+                                                        value={task}
+                                                        onChange={(e) => handleTaskChange(index, e.target.value)}
+                                                        className={inputClasses}
+                                                        rows={4}
+                                                    />
+                                                ) : (
+                                                    <input
+                                                        type="text"
+                                                        placeholder={`e.g., ${index === 0
+                                                            ? "Manage social media content"
+                                                            : index === 1
+                                                                ? "Respond to customer inquiries"
+                                                                : "Create weekly reports"
+                                                            }`}
+                                                        value={task}
+                                                        onChange={(e) => handleTaskChange(index, e.target.value)}
+                                                        className={inputClasses}
+                                                        required={index < 3}
+                                                    />
+                                                )}
                                             </div>
                                         ))}
                                     </div>
@@ -633,39 +636,25 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                 <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-6 border border-zinc-200 dark:border-zinc-800">
                                     <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Work Details</h3>
                                     <div className={sectionClasses}>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    Weekly Hours <span className="text-red-500">*</span>
-                                                </label>
-                                                <SingleSelect
-                                                    value={formData.weeklyHours}
-                                                    onChange={(v) => handleInputChange("weeklyHours", v)}
-                                                    options={[
-                                                        { label: "10 hrs/week", value: "10" },
-                                                        { label: "20 hrs/week", value: "20" },
-                                                        { label: "30 hrs/week", value: "30" },
-                                                        { label: "40 hrs/week", value: "40" },
-                                                    ]}
-                                                    placeholder="Select hours"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className={labelClasses}>
-                                                    Daily Overlap <span className="text-red-500">*</span>
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="8"
-                                                    placeholder="4"
-                                                    value={formData.dailyOverlap}
-                                                    onChange={(e) => handleInputChange("dailyOverlap", e.target.value)}
-                                                    className={inputClasses}
-                                                    required
-                                                />
-                                            </div>
+
+                                        <div>
+                                            <label className={labelClasses}>
+                                                Weekly Hours <span className="text-red-500">*</span>
+                                            </label>
+                                            <SingleSelect
+                                                value={formData.weeklyHours}
+                                                onChange={(v) => handleInputChange("weeklyHours", v)}
+                                                options={[
+                                                    { label: "10 hrs/week", value: "10" },
+                                                    { label: "20 hrs/week", value: "20" },
+                                                    { label: "30 hrs/week", value: "30" },
+                                                    { label: "40 hrs/week", value: "40" },
+                                                ]}
+                                                placeholder="Select hours"
+                                            />
                                         </div>
+
+
                                         <div>
                                             <label className={labelClasses}>
                                                 Timezone <span className="text-red-500">*</span>
@@ -714,23 +703,41 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                         {formData.requirements.map((req, index) => (
                                             <div key={index}>
                                                 <label className={labelClasses}>
-                                                    Requirement {index + 1} <span className="text-red-500">*</span>
+                                                    Requirement {index + 1} {index < 3 && <span className="text-red-500">*</span>}
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    placeholder={`e.g., ${index === 0
-                                                        ? "2+ years experience in social media"
-                                                        : index === 1
-                                                            ? "Proficient in Canva and Adobe Suite"
-                                                            : "Experience with CRM systems"
+                                                    placeholder={`${index > 2
+                                                        ? "Additional Requirement"
+                                                        : index === 0
+                                                            ? "e.g., 2+ years experience in social media"
+                                                            : index === 1
+                                                                ? "e.g., Proficient in Canva and Adobe Suite"
+                                                                : "e.g., Experience with CRM systems"
                                                         }`}
+
                                                     value={req}
                                                     onChange={(e) => handleRequirementChange(index, e.target.value)}
                                                     className={inputClasses}
-                                                    required
+                                                    required={index < 3}
                                                 />
                                             </div>
                                         ))}
+                                        <button
+                                            type="button"
+                                            onClick={handleAddRequirement}
+                                            className="
+  inline-flex items-center justify-center
+  rounded-lg border border-dashed border-[var(--accent)] 
+  dark:border-[var(--accent)]/70
+  px-4 py-2 text-sm font-medium text-[var(--primary)]
+  dark:text-[var(--accent)]
+  hover:bg-[var(--accent)]/10 dark:hover:bg-[var(--accent)]/20
+  transition-colors
+"
+                                        >
+                                            + Add Requirement
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -751,34 +758,19 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             />
                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1.5">List the tools and technologies your team uses</p>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className={labelClasses}>English Level</label>
-                                                <SingleSelect
-                                                    value={formData.englishLevel}
-                                                    onChange={(v) => handleInputChange("englishLevel", v)}
-                                                    options={[
-                                                        { label: "Basic", value: "Basic" },
-                                                        { label: "Good", value: "Good" },
-                                                        { label: "Excellent", value: "Excellent" },
-                                                        { label: "Near-native", value: "Near-native" },
-                                                    ]}
-                                                    placeholder="Select level"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className={labelClasses}>Budget Band</label>
-                                                <SingleSelect
-                                                    value={formData.budgetBand}
-                                                    onChange={(v) => handleInputChange("budgetBand", v)}
-                                                    options={[
-                                                        { label: "Lite", value: "Lite" },
-                                                        { label: "Standard", value: "Standard" },
-                                                        { label: "Pro", value: "Pro" },
-                                                    ]}
-                                                    placeholder="Select band"
-                                                />
-                                            </div>
+                                        <div>
+                                            <label className={labelClasses}>English Level</label>
+                                            <SingleSelect
+                                                value={formData.englishLevel}
+                                                onChange={(v) => handleInputChange("englishLevel", v)}
+                                                options={[
+                                                    { label: "Basic", value: "Basic" },
+                                                    { label: "Good", value: "Good" },
+                                                    { label: "Excellent", value: "Excellent" },
+                                                    { label: "Near-native", value: "Near-native" },
+                                                ]}
+                                                placeholder="Select level"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -844,16 +836,7 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             </div>
                                         )}
 
-                                        <div>
-                                            <label className={labelClasses}>Examples to Emulate</label>
-                                            <input
-                                                type="text"
-                                                placeholder="URL or description"
-                                                value={formData.examplesURL}
-                                                onChange={(e) => handleInputChange("examplesURL", e.target.value)}
-                                                className={inputClasses}
-                                            />
-                                        </div>
+
                                         <div>
                                             <label className={labelClasses}>Reporting Expectations</label>
                                             <textarea
@@ -909,18 +892,6 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             />
                                         </div>
                                         <div>
-                                            <label className={labelClasses}>Role Split Preference</label>
-                                            <SingleSelect
-                                                value={formData.roleSplit}
-                                                onChange={(v) => handleInputChange("roleSplit", v)}
-                                                options={[
-                                                    { label: "Yes - Open to splitting tasks", value: "Yes" },
-                                                    { label: "No - One person for all tasks", value: "No" },
-                                                ]}
-                                                placeholder="Select preference"
-                                            />
-                                        </div>
-                                        <div>
                                             <label className={labelClasses}>Nice-to-Have Skills</label>
                                             <textarea
                                                 placeholder="Secondary skills that would be a bonus"
@@ -931,10 +902,7 @@ export default function IntakeForm({ userId, onFormChange, onClose, onSuccess }:
                                             />
                                         </div>
                                     </div>
-
-
                                 </div>
-
                             )}
 
                         </div>

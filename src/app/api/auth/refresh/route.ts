@@ -12,7 +12,8 @@ export async function POST() {
       return NextResponse.json({ error: "No refresh token." }, { status: 401 });
     }
 
-    const payload = verifyRefreshToken(refreshToken);
+    const payload = await verifyRefreshToken(refreshToken);
+
     if (!payload) {
       return NextResponse.json(
         { error: "Invalid refresh token." },
@@ -31,7 +32,7 @@ export async function POST() {
       );
     }
 
-    const newAccessToken = generateAccessToken({
+    const newAccessToken = await generateAccessToken({
       userId: payload.userId,
       email: payload.email,
     });
